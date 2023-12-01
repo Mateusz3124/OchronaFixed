@@ -1,0 +1,28 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Page</title>
+    <style>
+        input {
+            width: 2em;
+            text-align: center;
+            margin: 5px;
+        }
+        #mess {
+            font-size: 25px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Login</h1>
+    <form method="post" action={{ url_for('bank') }}>
+        {% for i in range(password_length) %}
+            <input type="password" maxlength="1" name="password{{ loop.index }}" required>
+        {% endfor %}
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    <p id="mess"><strong>{{message}}</strong></p>
+</body>
+</html>

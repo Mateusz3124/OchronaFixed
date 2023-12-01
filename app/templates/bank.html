@@ -1,0 +1,50 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Page</title>
+    <style>
+        input {
+            width: 200px;
+            text-align: center;
+            margin: 5px;
+        }
+        #mess {
+            font-size: 25px;
+        }
+    </style>
+</head>
+<body>
+    <ul>
+        {% for item in notes %}
+          <li>{{ loop.index }}</li>
+        {% endfor %}
+    </ul>
+    <form method="get" action="/hello">
+        <label>Title:</label><br>
+        <input type="text" name="Title" required><br>
+
+        <label>Amount:</label><br>
+        <input type="text" name="Amount" required><br>
+
+        <label>Account Number:</label><br>
+        <input type="text" name="Account" required><br>
+
+        <label>Name:</label><br>
+        <input type="text" name="Name" required><br>
+
+        <label>Surname:</label><br>
+        <input type="text" name="Surname" required><br>
+
+        <button type="submit">Add transaction</button>
+    </form>
+    <form method="post" action="/password">
+        <label>New Password:</label><br>
+        <input type="password" name="password" required><br>
+        <label>Repeat Password:</label><br>
+        <input type="password" name="repeatedPassword" required><br>
+        <button type="submit">Change Password</button>
+    </form>
+    <p id="mess"><strong>{{message}}</strong></p>
+</body>
+</html>
