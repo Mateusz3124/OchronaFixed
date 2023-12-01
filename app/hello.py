@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for
-import markdown
 from collections import deque
+import re
 
 app = Flask(__name__)
 
@@ -55,7 +55,10 @@ def bank():
 def changePassword():
     password = clearInput(request.form.get("password"))
     repeatedPassword = clearInput(request.form.get("repeatedPassword"))
-    print 
+
+    if password in "" or repeatedPassword in "":
+        return render_template("bank.html", message="Incorrect Input must be letters, numbers or !@#$%^&*")
+    
     if password == repeatedPassword:
         return render_template("bank.html", message="Success")
     else:
@@ -63,25 +66,14 @@ def changePassword():
 
 
 def clearInput(text):
-    # implement bleach.clean
-    return text
-
-@app.route("/render", methods=['POST'])
-def render():
-    md = request.form.get("markdown","")
-    rendered = markdown.markdown(md)
-    notes.append(rendered)
-    return render_template("markdown.html", rendered=rendered)
-
-@app.route("/render/<rendered_id>")
-def render_old(rendered_id):
-    if int(rendered_id) > len(notes):
-        return "Wrong note id", 404
-
-    rendered = notes[int(rendered_id) - 1]
-    return render_template("markdown.html", rendered=rendered)
-
-
+    # implement bleach.clean or this method
+    pattern = re.compile(r'^[a-zA-Z0-9!@#$%^&*]+$')
+    match = pattern.match(text)
+    if bool(match):
+        return text
+    else:
+        return ""
+    
 if __name__ == "__main__":
     from waitress import serve
     serve(app, host="0.0.0.0", port=5000)
