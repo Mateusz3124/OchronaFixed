@@ -4,12 +4,6 @@ import re
 
 app = Flask(__name__)
 
-class CustomError(Exception):
-    def __init__(self, message):
-        super().__init__(message)
-
-notes = []
-recent_users = deque(maxlen=3)
 PASSWORD_LENGTH = 8
 
 @app.route("/")
