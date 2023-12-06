@@ -4,54 +4,60 @@ import re
 
 app = Flask(__name__)
 
-PASSWORD_LENGTH = 8
-
 @app.route("/")
 def main():
     messager = request.args.get('message', '')
-    return render_template("main.html", password_length=PASSWORD_LENGTH, message = messager)
-
+    missing = [1,5,6,12]
+    return render_template("main.html",missing_letters = missing, message = messager)
 
 @app.route("/bank", methods=['GET', 'POST'])
 def bank():
-    username = "Mateusz"
-    entered_password = ""
     if request.method == 'POST':
-
-        for i in range(PASSWORD_LENGTH):
-            letter = request.form.get(f'password{i+1}', '')
-            if len(letter) != 1:    
-                return redirect(url_for('main', message="Error tried to add password with too many letters"))
-            entered_password += letter
+        entered_password = ""
+        username = clearInput(request.form.get("username"))
+        continuation = True
+        i = 0
+        counter = 0
+        while continuation:
+            letter = clearInput(request.form.get(f'password{i+1}', ''))
+            i += 1
+            if len(letter) == 1:
+                counter = 0
+                entered_password += letter
+            elif len(letter) == 0:
+                if counter == 2:
+                    continuation = False
+                else:
+                    counter += 1
+            else:    
+                return redirect(url_for('main', message="Error tried to trick system and add password with too many letters"))
         
-
-        if entered_password != '12345678':     
-            return redirect(url_for('main', message='Incorrect Password'))
-        
+        if entered_password != '12345678' or username != 'mati':     
+            return redirect(url_for('main', message='Incorrect Password or Login'))
         else:
             resp = make_response(render_template("bank.html"))
-            resp.set_cookie("password", entered_password)
+            resp.set_cookie("token", entered_password)
             return resp
     
     if request.method == 'GET':
 
-        password = request.cookies.get("password")
+        token = clearInput(request.cookies.get("token", ""))
 
-        if password is None:
+        if token in "":
             return redirect(url_for('main', message='Please Enter Password'))
         
-        if password != '12345678':     
+        if token != '12345678':     
             return redirect(url_for('main', message='Incorrect Password'))
         
         return render_template("bank.html")
 
 @app.route("/password", methods=['POST'])
 def changePassword():
-    password = clearInput(request.form.get("password"))
-    repeatedPassword = clearInput(request.form.get("repeatedPassword"))
+    password = clearInput(request.form.get("password", ""))
+    repeatedPassword = clearInput(request.form.get("repeatedPassword", ""))
 
     if password in "" or repeatedPassword in "":
-        return render_template("bank.html", message="Incorrect Input must be letters, numbers or !@#$%^&*")
+        return render_template("bank.html", message="Incorrect Input must be letters, numbers or !@$%^&*[] and no spaces")
     
     if password == repeatedPassword:
         return render_template("bank.html", message="Success")
@@ -61,7 +67,9 @@ def changePassword():
 
 def clearInput(text):
     # implement bleach.clean or this method
-    pattern = re.compile(r'^[a-zA-Z0-9!@#$%^&*]+$')
+    pattern = re.compile(r'^[a-zA-Z0-9!@$%^&*\[\]]+$')
+    if text is None:
+        return ""
     match = pattern.match(text)
     if bool(match):
         return text

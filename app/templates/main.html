@@ -5,9 +5,18 @@
     <title>Password Page</title>
     <style>
         input {
-            width: 2em;
+            width: 20.67px;
             text-align: center;
             margin: 5px;
+        }
+        #user {
+            width:auto;
+        }
+        #block {
+            width: 20.67px;
+            height: 20.67px;
+            background-color: black;
+            margin: 6.1778px;
         }
         #mess {
             font-size: 25px;
@@ -15,14 +24,58 @@
     </style>
 </head>
 <body>
-    <h1>Login</h1>
     <form method="post" action={{ url_for('bank') }}>
-        {% for i in range(password_length) %}
-            <input type="password" maxlength="1" name="password{{ loop.index }}" required>
-        {% endfor %}
+        <h1>Authentication id</h1>
         <br>
-        <button type="submit">Login</button>
+        <input type="text" id="user" name="username" required>
+        <br>
+        <h1>Password</h1>
+        <div id="container">   
+        {% for i in range(8) %}
+            {% if i in missing_letters %}
+                <input id="block" readonly></input>
+            {% else %}
+                <input type="password" maxlength="1" name="password{{ loop.index }}" required>
+            {% endif %}
+        {% endfor %}
+        <input type="password" maxlength="1" name="password9" oninput="addExtraInput(this)">
+        </div>
+        <br>
+        <button style="margin-top: 10px;" type="submit">Login</button>
     </form>
-    <p id="mess"><strong>{{message}}</strong></p>
+    <p id="mess" style="margin-top: 5px;"><strong>{{message}}</strong></p>
+    <script>
+        function addExtraInput(object) {
+            var container = document.getElementById('container');           
+            var currentName = object.name;
+            var numericPart = currentName.match(/\d+/);
+            var incrementedValue = parseInt(numericPart[0], 10) + 1;
+            var newName = currentName.replace(/\d+/, incrementedValue);
+            var counts = JSON.parse('{{ missing_letters | tojson | safe }}');
+            if(counts.includes(incrementedValue)){
+                var newInput = document.createElement('input');
+                newInput.id = "block";
+                newInput.readOnly = true;
+                container.appendChild(newInput);
+                newInput = document.createElement('input');
+                newInput.type = 'password';
+                newInput.maxLength = "1";
+                newInput.name = newName;
+                newInput.oninput= function(event) {
+                    addExtraInput(event.target);
+                }
+                container.appendChild(newInput);
+            }else{
+                var newInput = document.createElement('input');
+                newInput.type = 'password';
+                newInput.maxLength = "1";
+                newInput.name = newName;
+                newInput.oninput= function(event) {
+                    addExtraInput(event.target);
+                }
+                container.appendChild(newInput);
+            }
+        }
+    </script>
 </body>
 </html>
