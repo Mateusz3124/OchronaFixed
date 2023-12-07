@@ -45,9 +45,14 @@
     </form>
     <p id="mess" style="margin-top: 5px;"><strong>{{message}}</strong></p>
     <script>
+        let flags = {};
         function addExtraInput(object) {
-            var container = document.getElementById('container');           
             var currentName = object.name;
+            if(flags[currentName]){
+                return;
+            }
+            flags[currentName] = true;
+            var container = document.getElementById('container');           
             var numericPart = currentName.match(/\d+/);
             var incrementedValue = parseInt(numericPart[0], 10) + 1;
             var newName = currentName.replace(/\d+/, incrementedValue);

@@ -19,12 +19,21 @@
             margin-left: 50px;
             float: left;
         }
+        ul {
+            list-style-type: none;
+        }
+        .cont {
+            border: 1px;
+            border-style: solid;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div>
         <div id = "first">
-            <form method="get" action="/hello">
+            <form method="post" action="/hello">
                 <label>Title:</label><br>
                 <input type="text" name="Title" required><br>
         
@@ -39,8 +48,17 @@
         
                 <label>Surname:</label><br>
                 <input type="text" name="Surname" required><br>
+
+                <label>Adress:</label><br>
+                <input type="text" name="Adress" required><br>
         
                 <button type="submit">Add transaction</button>
+            </form>
+            <h1>Your data:</h1>
+            <h2>Your card number: {{ card_number}}</h2>
+            <h2>Your id number: {{ id_number }}</h2>
+            <form method="get" action="{{ url_for('data') }}">
+                <button type="submit">Get your data</button>
             </form>
             <form method="post" action="/password">
                 <label>New Password:</label><br>
@@ -52,10 +70,17 @@
             <p id="mess"><strong>{{message}}</strong></p>
         </div>
         <div id = "second">
-            <h1>Does it work?</h1>
+            <h1>Your Transactions</h1>
             <ul>
-                {% for item in notes %}
-                  <li>{{ loop.index }}</li>
+                {% for item in history %}
+                <div class="cont">
+                  <li>Title: {{ item.Title }}</li>
+                  <li>Amount: {{ item.Amount }}</li>
+                  <li>Account: {{ item.Account }}</li>
+                  <li>Name: {{ item.Name }}</li>
+                  <li>Surname: {{ item.Surname }}</li>
+                  <li>Adress: {{ item.Adress }}</li>
+                </div>
                 {% endfor %}
             </ul>
         </div>
