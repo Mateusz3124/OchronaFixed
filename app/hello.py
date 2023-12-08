@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for
 from api import init_db, add_transaction, change_password
+from flask_wtf.csrf import CSRFProtect, CSRFError
+import datetime
 import re
 
 class Transaction():
@@ -20,8 +22,14 @@ class Transaction():
 
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'your_secret_key_here'
+csrf = CSRFProtect(app)
 
 init_db()
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return redirect(url_for('main', message='Something went wrong try logging again'))
 
 @app.route("/")
 def main():
@@ -30,6 +38,7 @@ def main():
     return render_template("main.html",missing_letters = missing, message = messager)
 
 def authorizeToken(request):
+    #no token only session identificator 
     token = clearInput(request.cookies.get("token", ""))
 
     if token in "":
@@ -64,7 +73,8 @@ def bank():
             return redirect(url_for('main', message='Incorrect Password or Login'))
         else:
             resp = make_response(renderBank())
-            resp.set_cookie("token", entered_password)
+            expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            resp.set_cookie("token", value=entered_password, httponly=True, expires=expiration_time)
             return resp
     
     if request.method == 'GET':
@@ -87,6 +97,9 @@ def renderBank(mess = "", card = "", id = ""):
 @app.route("/personalData", methods=['GET'])
 def data():
     authorizeToken(request)
+    password = clearInput(request.form.get("passwordForDetails"))
+    if password in "":
+        return renderBank("Incorrect password")
     return renderBank("", 2321321, 222118)
 
 @app.route("/password", methods=['POST'])

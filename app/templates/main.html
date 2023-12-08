@@ -25,6 +25,7 @@
 </head>
 <body>
     <form method="post" action={{ url_for('bank') }}>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h1>Authentication id</h1>
         <br>
         <input type="text" id="user" name="username" required>

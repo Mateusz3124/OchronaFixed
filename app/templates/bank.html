@@ -34,6 +34,7 @@
     <div>
         <div id = "first">
             <form method="post" action="/hello">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Title:</label><br>
                 <input type="text" name="Title" required><br>
         
@@ -58,9 +59,13 @@
             <h2>Your card number: {{ card_number}}</h2>
             <h2>Your id number: {{ id_number }}</h2>
             <form method="get" action="{{ url_for('data') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>New Password:</label><br>
+                <input type="password" name="passwordForDetails" required><br>
                 <button type="submit">Get your data</button>
             </form>
             <form method="post" action="/password">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>New Password:</label><br>
                 <input type="password" name="password" required><br>
                 <label>Repeat Password:</label><br>
