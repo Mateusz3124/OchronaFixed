@@ -2,7 +2,7 @@ version: '3'
 services:
   mysql-container:
     build:
-      context: .
+      context: ./sql
       dockerfile: Dockerfile
     ports:
       - "3306:3306"
