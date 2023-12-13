@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for
-from api import init_db, add_transaction, change_password
+from api import init_db, add_transaction, change_password, get_transaction
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import datetime
 import re
@@ -37,7 +37,7 @@ def main():
     missing = [1,5,6,12]
     return render_template("main.html",missing_letters = missing, message = messager)
 
-def authorizeToken(request):
+def authorizeSesion(request):
     #no token only session identificator 
     token = clearInput(request.cookies.get("token", ""))
 
@@ -56,7 +56,7 @@ def bank():
         i = 0
         counter = 0
         while continuation:
-            letter = clearInput(request.form.get(f'password{i+1}', ''))
+            letter = clearInput(request.form.get(f'password{i+1}'))
             i += 1
             if len(letter) == 1:
                 counter = 0
@@ -78,16 +78,18 @@ def bank():
             return resp
     
     if request.method == 'GET':
-        authorizeToken(request)
+        authorizeSesion(request)
         renderBank()
 
-def renderBank(mess = "", card = "", id = ""):
+def changeToTransaction(response):
     bankHistory = []
-    transaction = Transaction()
-    transaction.set("Jedzenie",2122,"021333213","Mateusz","Gronek", "paiskowa")
-    bankHistory.append(transaction)
-    transaction.set("Jedzenie",11133221,"3123213","Mielarek","Mog", "piaskowa")
-    bankHistory.append(transaction)
+    for item in response:
+        transaction = Transaction()
+        transaction.set(item[0],item[1],item[2],item[3],item[4],item[5])
+        bankHistory.append(transaction)
+    return bankHistory
+def renderBank(mess = "", card = "", id = ""):
+    bankHistory = changeToTransaction(get_transaction())
     if card and id:
         return render_template("bank.html", card_number=card, id_number=id, history=bankHistory)
     if mess:
@@ -96,7 +98,7 @@ def renderBank(mess = "", card = "", id = ""):
 
 @app.route("/personalData", methods=['GET'])
 def data():
-    authorizeToken(request)
+    authorizeSesion(request)
     password = clearInput(request.form.get("passwordForDetails"))
     if password in "":
         return renderBank("Incorrect password")
@@ -104,7 +106,7 @@ def data():
 
 @app.route("/password", methods=['POST'])
 def changePassword():
-    authorizeToken(request)
+    authorizeSesion(request)
     password = clearInput(request.form.get("password", ""))
     repeatedPassword = clearInput(request.form.get("repeatedPassword", ""))
 
