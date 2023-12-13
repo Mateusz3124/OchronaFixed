@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, make_response, redirect, url_for
+from flask import Flask, render_template, request, make_response, redirect, url_for, session
 from api import init_db, add_transaction, change_password, get_transaction
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import datetime
@@ -30,6 +30,7 @@ init_db()
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     return redirect(url_for('main', message='Something went wrong try logging again'))
+    
 
 @app.route("/")
 def main():
@@ -39,13 +40,16 @@ def main():
 
 def authorizeSesion(request):
     #no token only session identificator 
-    token = clearInput(request.cookies.get("token", ""))
-
-    if token in "":
-        return redirect(url_for('main', message='Please Enter Password'))
+    # token = clearInput(request.cookies.get("token", ""))
+    if 'user' not in session:
+        return True
+    else:
+        return False
+    # if token in "":
+    #     return redirect(url_for('main', message='Please Enter Password'))
     
-    if token != '12345678':     
-        return redirect(url_for('main', message='Incorrect Password'))
+    # if token != '12345678':     
+    #     return redirect(url_for('main', message='Incorrect Password'))
 
 @app.route("/bank", methods=['GET', 'POST'])
 def bank():
@@ -73,13 +77,15 @@ def bank():
             return redirect(url_for('main', message='Incorrect Password or Login'))
         else:
             resp = make_response(renderBank())
-            expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
-            resp.set_cookie("token", value=entered_password, httponly=True, expires=expiration_time)
+            # expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+            session['user'] = username
+            # resp.set_cookie("token", value=entered_password, httponly=True, expires=expiration_time)
             return resp
     
     if request.method == 'GET':
-        authorizeSesion(request)
-        renderBank()
+        if authorizeSesion(request):
+            return redirect(url_for('main', message='Please Log In'))
+        return renderBank()
 
 def changeToTransaction(response):
     bankHistory = []
@@ -88,25 +94,25 @@ def changeToTransaction(response):
         transaction.set(item[0],item[1],item[2],item[3],item[4],item[5])
         bankHistory.append(transaction)
     return bankHistory
+
 def renderBank(mess = "", card = "", id = ""):
     bankHistory = changeToTransaction(get_transaction())
     if card and id:
         return render_template("bank.html", card_number=card, id_number=id, history=bankHistory)
     if mess:
         return render_template("bank.html", message=mess, history=bankHistory)
-    return render_template("bank.html", history=bankHistory)
+    return render_template("bank.html", message="", history=bankHistory)
 
 @app.route("/personalData", methods=['GET'])
 def data():
-    authorizeSesion(request)
-    password = clearInput(request.form.get("passwordForDetails"))
-    if password in "":
-        return renderBank("Incorrect password")
+    if authorizeSesion(request):
+        return redirect(url_for('main', message='Please Log In'))
     return renderBank("", 2321321, 222118)
 
 @app.route("/password", methods=['POST'])
 def changePassword():
-    authorizeSesion(request)
+    if authorizeSesion(request):
+        return redirect(url_for('main', message='Please Log In'))
     password = clearInput(request.form.get("password", ""))
     repeatedPassword = clearInput(request.form.get("repeatedPassword", ""))
 
