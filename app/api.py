@@ -1,78 +1,94 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for
 import mysql.connector
+import random
+from passlib.hash import argon2
+import time
 import re
 
-class Transaction():
-    Title = None
-    Amount = None
-    Account = None
-    Name = None
-    Surname = None
-    Adress = None
-
-    def set(self, Title,Amount,Account,Name,Surname,Adress):
-        self.Title = Title
-        self.Amount = Amount
-        self.Account = Account
-        self.Name = Name
-        self.Surname = Surname
-        self.Adress = Adress
-
-
 database = mysql.connector.connect(host='localhost',user='root',passwd='root',database='bank')
-sql_insert_users = """
-    INSERT INTO users (username, password, card, id)
-    VALUES (%s, %s, %s, %s)
-"""
 
-sql_insert_transaction = """
-    INSERT INTO transactions (title, amount, account, name, surname, address)
-    VALUES (%s, %s, %s, %s, %s, %s)
-"""
+def generateTenValues():
+    condition = True    
+    while(condition):
+        condition = False
+        random.seed(time.perf_counter())
+        randomNumbers = [random.randint(1, 30) for i in range(8)]
+        sortedNumbers = sorted(randomNumbers)
+        holder = -1
+        for value in sortedNumbers:
+            if holder + 1 == value or holder == value:
+                condition = True
+                continue
+            else:
+                holder = value
+    return sortedNumbers
 
-def init_db():
+def generatePasswords(givenPassword):
+    sequences = []
+    for i in range(10):
+        sequences.append(generateTenValues())
+
+    passwords = []
+    for sequence in sequences:
+        counter = 0
+        password = ""
+        for letter in givenPassword:
+            if counter not in sequence:
+                password += letter
+            counter += 1
+        passwords.append(password)
+    h = []
+    for i in range(len(passwords)):
+        value = argon2.hash(passwords[i])
+        h.append([value, sequences[i]])
+    return h
+
+def getTransaction(user):
     cursor = database.cursor()
-    data = ('mati','12345678','378282246310005', 'ABC123456')
-    cursor.execute(sql_insert_users,data)
-    database.commit()
-    data = ('ala','12345678','378282246310005', 'ABC123456')
-    cursor.execute(sql_insert_users,data)
-    database.commit()
-    transaction = Transaction()
-    transaction.set("Jedzenie",2122,"021333213","Mateusz","Gronek", "paiskowa")
-    xd1 = get_data('ala', '12345678')
-    xd2 = add_transaction(transaction)
-    xd = get_transaction()
-    change_password('mati','87654321')
-
-def add_transaction(transaction):
-    cursor = database.cursor()
-    data = (transaction.Title, transaction.Amount, transaction.Account, transaction.Name, transaction.Surname, transaction.Adress)
-    cursor.execute(sql_insert_transaction,data)
-    database.commit()
-    cursor.close()
-
-def get_data(password, username):
-    cursor = database.cursor()
-    data = (password, username)
-    sql = """SELECT card, id FROM users Where username = %s AND password = %s"""
-    cursor.execute(sql, data)
-    data = cursor.fetchall()
-    cursor.close()
-    return data
-
-def get_transaction():
-    cursor = database.cursor()
-    cursor.execute("SELECT * FROM transactions")
-    data = cursor.fetchall()
-    cursor.close()
-    return data
-
-def change_password(username, password):
-    cursor = database.cursor()
-    data = (password, username)
-    sql = """UPDATE users SET password = %s WHERE username = %s"""
+    data = (user,)
+    sql = """SELECT transactions.* FROM transactions JOIN users ON transactions.idUsername = users.id WHERE users.username = %s"""
     cursor.execute(sql,data)
+    data = cursor.fetchall()
+    cursor.close()
+    return data
+
+def changePassword(username, password):
+    passwordsWithSequences = generatePasswords(password)
+    cursor = database.cursor()
+    data = (username,)
+    sql = """SELECT id FROM users Where username = %s"""
+    cursor.execute(sql, data)
+    idUsername = cursor.fetchall()
+
+    sql = """DELETE FROM passwords WHERE idUsername = %s"""
+    cursor.execute(sql,idUsername[0])
     database.commit()
+
+    for elem in passwordsWithSequences:     
+        data = (elem[0], ",".join(str(num) for num in elem[1]), idUsername[0][0])
+        sql = """INSERT INTO passwords (password, sequence, idUsername) VALUES (%s, %s, %s);"""
+        cursor.execute(sql,data)
+        database.commit()
     cursor.close()
 
+def loginWithUsername(username):
+    cursor = database.cursor()
+    data = (username,)
+    sql = """SELECT passwords.sequence FROM passwords JOIN users ON passwords.idUsername = users.id WHERE users.username = %s"""
+    cursor.execute(sql,data)
+    sequences = cursor.fetchall()
+    cursor.close()
+    return sequences
+
+def loginWithPassword(username, password):
+    cursor = database.cursor()
+    data = (username,)
+    sql = """SELECT passwords.password FROM passwords JOIN users ON passwords.idUsername = users.id WHERE users.username = %s"""
+    cursor.execute(sql,data)
+    passwords = cursor.fetchall()
+    containtsPassword = True
+    for passw in passwords:
+        if argon2.verify(password, passw[0]):
+            containtsPassword = False
+    cursor.close()
+    return containtsPassword

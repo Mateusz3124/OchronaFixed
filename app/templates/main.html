@@ -9,42 +9,32 @@
             text-align: center;
             margin: 5px;
         }
-        #user {
-            width:auto;
-        }
         #block {
             width: 20.67px;
             height: 20.67px;
             background-color: black;
             margin: 6.1778px;
         }
-        #mess {
-            font-size: 25px;
-        }
     </style>
 </head>
 <body>
     <form method="post" action={{ url_for('bank') }}>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <h1>Authentication id</h1>
-        <br>
-        <input type="text" id="user" name="username" required>
-        <br>
+        <input type="hidden" name="username" value="{{ user }}">
         <h1>Password</h1>
         <div id="container">   
-        {% for i in range(8) %}
+        {% for i in range(10) %}
             {% if i in missing_letters %}
                 <input id="block" readonly></input>
             {% else %}
                 <input type="password" maxlength="1" name="password{{ loop.index }}" required>
             {% endif %}
         {% endfor %}
-        <input type="password" maxlength="1" name="password9" oninput="addExtraInput(this)">
+        <input type="password" maxlength="1" name="password11" oninput="addExtraInput(this)">
         </div>
         <br>
         <button style="margin-top: 10px;" type="submit">Login</button>
     </form>
-    <p id="mess" style="margin-top: 5px;"><strong>{{message}}</strong></p>
     <script>
         let flags = {};
         function addExtraInput(object) {
@@ -58,7 +48,7 @@
             var incrementedValue = parseInt(numericPart[0], 10) + 1;
             var newName = currentName.replace(/\d+/, incrementedValue);
             var counts = JSON.parse('{{ missing_letters | tojson | safe }}');
-            if(counts.includes(incrementedValue)){
+            if(counts.includes(incrementedValue-1)){
                 var newInput = document.createElement('input');
                 newInput.id = "block";
                 newInput.readOnly = true;
@@ -66,7 +56,8 @@
                 newInput = document.createElement('input');
                 newInput.type = 'password';
                 newInput.maxLength = "1";
-                newInput.name = newName;
+                var changedName = newName.replace(/\d+/, incrementedValue+1);
+                newInput.name = changedName;
                 newInput.oninput= function(event) {
                     addExtraInput(event.target);
                 }

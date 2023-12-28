@@ -1,7 +1,9 @@
+import math
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from api import init_db, add_transaction, change_password, get_transaction
+from api import getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import datetime
+import random
 import re
 
 class Transaction():
@@ -25,31 +27,34 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 csrf = CSRFProtect(app)
 
-init_db()
-
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    return redirect(url_for('main', message='Something went wrong try logging again'))
-    
+    return redirect(url_for('accountChoose', message='Something went wrong try logging again'))
 
 @app.route("/")
+def accountChoose():
+    messager = clearInput(request.args.get('message'))
+    return render_template("account.html",message = messager)
+
+
+@app.route("/main", methods=['POST'])
 def main():
-    messager = request.args.get('message', '')
-    missing = [1,5,6,12]
-    return render_template("main.html",missing_letters = missing, message = messager)
+    username = clearInput(request.form.get("username"))
+    sequences = loginWithUsername(username)
+    if not sequences:
+        missing = generateTenValues()
+    else: 
+        i = random.randint(0, 7)
+        list = sequences[i][0].split(",")
+        intList = [int(x) for x in list]
+        missing = intList
+    return render_template("main.html",missing_letters = missing, user = username)
 
 def authorizeSesion(request):
-    #no token only session identificator 
-    # token = clearInput(request.cookies.get("token", ""))
     if 'user' not in session:
         return True
     else:
         return False
-    # if token in "":
-    #     return redirect(url_for('main', message='Please Enter Password'))
-    
-    # if token != '12345678':     
-    #     return redirect(url_for('main', message='Incorrect Password'))
 
 @app.route("/bank", methods=['GET', 'POST'])
 def bank():
@@ -71,20 +76,18 @@ def bank():
                 else:
                     counter += 1
             else:    
-                return redirect(url_for('main', message="Error tried to trick system and add password with too many letters"))
+                return redirect(url_for('accountChoose', message="Error tried to trick system and add password with too many letters in one square"))
         
-        if entered_password != '12345678' or username != 'mati':     
-            return redirect(url_for('main', message='Incorrect Password or Login'))
+        if loginWithPassword(username, entered_password):     
+            return redirect(url_for('accountChoose', message='Incorrect Password or Login'))
         else:
-            resp = make_response(renderBank())
-            # expiration_time = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
             session['user'] = username
-            # resp.set_cookie("token", value=entered_password, httponly=True, expires=expiration_time)
+            resp = make_response(renderBank())
             return resp
     
     if request.method == 'GET':
         if authorizeSesion(request):
-            return redirect(url_for('main', message='Please Log In'))
+            return redirect(url_for('accountChoose', message='Please Log In'))
         return renderBank()
 
 def changeToTransaction(response):
@@ -96,7 +99,7 @@ def changeToTransaction(response):
     return bankHistory
 
 def renderBank(mess = "", card = "", id = ""):
-    bankHistory = changeToTransaction(get_transaction())
+    bankHistory = changeToTransaction(getTransaction(session['user']))
     if card and id:
         return render_template("bank.html", card_number=card, id_number=id, history=bankHistory)
     if mess:
@@ -107,26 +110,50 @@ def renderBank(mess = "", card = "", id = ""):
 def data():
     if authorizeSesion(request):
         return redirect(url_for('main', message='Please Log In'))
+    
     return renderBank("", 2321321, 222118)
 
 @app.route("/password", methods=['POST'])
-def changePassword():
+def changePassw():
     if authorizeSesion(request):
         return redirect(url_for('main', message='Please Log In'))
-    password = clearInput(request.form.get("password", ""))
-    repeatedPassword = clearInput(request.form.get("repeatedPassword", ""))
+    
+    givenPassword = clearInput(request.form.get("password"))
+    repeatedPassword = clearInput(request.form.get("repeatedPassword"))
 
-    if password in "" or repeatedPassword in "":
+    if givenPassword in "" or repeatedPassword in "":
         return renderBank("Incorrect Input must be letters, numbers or !@$%^&*[] and no spaces")
     
-    if password == repeatedPassword:
-        return renderBank("Success")
-    else:
+    if givenPassword != repeatedPassword:
         return renderBank("Passwords aren't the same")
 
+    if len(givenPassword) > 30 or len(givenPassword) < 10:
+        return renderBank("Password lenght is incorrect must be at least 10 letters and maximum of 30 letters")
 
+    specialCharacters = "!@$%^&*[]"
+    lowerCase = True
+    upperCase = True
+    number = True
+    special = True
+
+    for char in givenPassword:
+        if char.islower():
+            lowerCase = False
+        if char.isupper():
+            upperCase = False
+        if char.isdigit():
+            number = False
+        if char in specialCharacters:
+            special = False
+
+    if lowerCase or upperCase or number or special:
+        return renderBank("Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@$%^&*[]")
+
+    changePassword(session['user'], givenPassword)
+    return renderBank("Success, password changed")
+        
 def clearInput(text):
-    pattern = re.compile(r'^[a-zA-Z0-9!@$%^&*\[\]]+$')
+    pattern = re.compile(r'^[ a-zA-Z0-9!@$%^&*\[\]]+$')
     if text is None:
         return ""
     match = pattern.match(text)
