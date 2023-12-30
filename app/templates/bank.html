@@ -33,7 +33,11 @@
 <body>
     <div>
         <div id = "first">
-            <form method="post" action="/hello">
+            <form method="post" action="{{ url_for('logout')}}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Logout</button>
+            </form>
+            <form method="post" action="{{ url_for('addTransaction')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Title:</label><br>
                 <input type="text" name="Title" required><br>
@@ -58,10 +62,17 @@
             <h1>Your data:</h1>
             <h2>Your card number: {{ card_number}}</h2>
             <h2>Your id number: {{ id_number }}</h2>
+            {% if not card_number %}
             <form method="get" action="{{ url_for('data') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">Get your data</button>
             </form>
+            {% else %}
+            <form method="get" action="{{ url_for('bank') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">Hide your data</button>
+            </form>
+            {% endif %}
             <form method="post" action="{{ url_for('changePassw')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>New Password:</label><br>
@@ -124,10 +135,11 @@
                 <div class="cont">
                   <li>Title: {{ item.Title }}</li>
                   <li>Amount: {{ item.Amount }}</li>
-                  <li>Account: {{ item.Account }}</li>
-                  <li>Name: {{ item.Name }}</li>
-                  <li>Surname: {{ item.Surname }}</li>
-                  <li>Adress: {{ item.Adress }}</li>
+                  <li>From Account: {{ item.FromAccount }}</li>
+                  <li>Recipient Account: {{ item.Account }}</li>
+                  <li>Recipient Name: {{ item.Name }}</li>
+                  <li>Recipient Surname: {{ item.Surname }}</li>
+                  <li>Recipient Adress: {{ item.Adress }}</li>
                 </div>
                 {% endfor %}
             </ul>

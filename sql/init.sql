@@ -6,8 +6,10 @@ USE bank;
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    account VARCHAR(255),
     username VARCHAR(255),
     card VARCHAR(255),
+    loginCount INT,
     idNumber VARCHAR(255)
 );
 
@@ -15,6 +17,7 @@ CREATE TABLE  transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
     amount VARCHAR(255),
+    fromAccount VARCHAR(255),
     account VARCHAR(255),
     name VARCHAR(255),
     surname VARCHAR(255),
@@ -31,8 +34,8 @@ CREATE TABLE passwords (
     FOREIGN KEY (idUsername) REFERENCES users(id)
 );
 
-INSERT INTO users (username, card, idNumber) VALUES ('12345678', '4063330671623509', 'ABC123456');
-INSERT INTO users (username, card, idNumber) VALUES ('87654321', '4063337151212679', 'ABC654321');
+INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('12345678', '4063330671623509', 'ABC123456','a23v567891011','0');
+INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('87654321', '4063337151212679', 'ABC654321', '1234567891011','0');
 
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$vBcCAOB8T4kxxtibU4qRUg$oHjXNmpuaFW4W/lLA5eTL8zoZTD4YaEQ1VmrCojwJes', '2,5,14,17,19,22,24,29','1');
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$7N2717rXuleqldIa49y7lw$m3zJWgqwtZW8Y8Sum6G8tG3f8Wen2z3wvrLC4V0XHxA', '6,10,13,16,20,22,26,28','1');
