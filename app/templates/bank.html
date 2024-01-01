@@ -84,14 +84,10 @@
             <label id="StrentghOfPassword"></label><br>
             <script>
                 function checkStrength(){
-                    console.log("is detected")
                     let stat = {};
                     var inputElement = document.getElementById("passwordInput");
-                    console.log(inputElement)
                     var text = inputElement.value;
-                    console.log(text)
                     var textLength = text.length;
-                    console.log(textLength)
                     var element = document.getElementById("StrentghOfPassword");
                     if (textLength === 0){
                         element.textContent = ""

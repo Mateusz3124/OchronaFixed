@@ -1,0 +1,7 @@
+flask
+flask_wtf
+mysql-connector-python
+pycryptodome
+passlib
+waitress
+argon2-cffi

@@ -1,8 +1,6 @@
-import math
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from api import getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from api import getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
 from flask_wtf.csrf import CSRFProtect, CSRFError
-import datetime
 import random
 import time
 import re
@@ -94,10 +92,10 @@ def bank():
                 else:
                     counter += 1
             else:    
-                return redirect(url_for('accountChoose', message="Error tried to trick system and add password with too many letters in one square"))
+                return redirect(url_for('accountChoose', message="Error tried to trick system"))
         result = loginWithPassword(username, entered_password)
         if result is None:
-            return redirect(url_for('accountChoose', message='This username have reach limit of 5 tries and is blocked, please go to local bank to fix this issue'))
+            return redirect(url_for('accountChoose', message="Reached limit of 5 tries, go to local bank to fix this issue"))
         if result:     
             return redirect(url_for('accountChoose', message='Incorrect Password or Login'))
         else:
@@ -152,7 +150,8 @@ def addTransaction():
 def data():
     if authorizeSesion(request):
         return redirect(url_for('accountChoose', message='Please Log In'))
-    return renderBank("", 2321321, 222118)
+    data = getData(session['user'])
+    return renderBank("", data[0], data[1])
 
 @app.route("/password", methods=['POST'])
 def changePassw():
@@ -196,6 +195,8 @@ def changePassw():
 def clearInput(text):
     pattern = re.compile(r'^[., a-zA-Z0-9!@$%^&*\[\]]+$')
     if text is None:
+        return ""
+    if len(text) > 60:
         return ""
     match = pattern.match(text)
     if bool(match):

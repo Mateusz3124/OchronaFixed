@@ -34,8 +34,8 @@ CREATE TABLE passwords (
     FOREIGN KEY (idUsername) REFERENCES users(id)
 );
 
-INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('12345678', '4063330671623509', 'ABC123456','a23v567891011','0');
-INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('87654321', '4063337151212679', 'ABC654321', '1234567891011','0');
+INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('12345678', 'X9/Nw6pCMR2c9Nrb4v9+Kw==;dCA4NlTxRe9OscEOH+3LwMUxXj21J6wl975JJWUga/I=', '2upGw96VwKHTKysy+IWEDA==;Yv6gTCmNZGj6f4Z6MRITyQ==','a23v567891011','0');
+INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('87654321', 'LkVTdEBE5wulw/an0vOiLw==;llRr/9YXqTrKYmoQdWQgLsx8LG1Gt/34wJa03/woa6g=', '2nhUpMkF6PnQ0lAwj4/MUA==;sSM4IcNaJxNX6ravz4SNgA==', '1234567891011','0');
 
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$vBcCAOB8T4kxxtibU4qRUg$oHjXNmpuaFW4W/lLA5eTL8zoZTD4YaEQ1VmrCojwJes', '2,5,14,17,19,22,24,29','1');
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$7N2717rXuleqldIa49y7lw$m3zJWgqwtZW8Y8Sum6G8tG3f8Wen2z3wvrLC4V0XHxA', '6,10,13,16,20,22,26,28','1');

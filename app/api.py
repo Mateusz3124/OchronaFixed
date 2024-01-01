@@ -1,13 +1,15 @@
-from flask import Flask, render_template, request, make_response, redirect, url_for
-import mysql.connector 
+from flask import render_template, request, make_response, redirect, url_for
 from mysql.connector import pooling
+from Crypto.Protocol.KDF import PBKDF2
 import random
 from passlib.hash import argon2
+from base64 import b64decode
+from Crypto.Cipher import AES
 import time
-import re
 
 dbconfig = {
-    "host": "localhost",
+    "host": "172.17.0.1",
+    "port": "3306",
     "user": "root",
     "password": "root",
     "database": "bank"
@@ -153,7 +155,52 @@ def loginWithUsernameMethod(username):
     database.close()
     return sequences
 
+def decrypt(data,key, iv):
+    aes = AES.new(key, AES.MODE_CBC, iv)
+    encrypted_data = aes.decrypt(data)
+    return encrypted_data
 
+def read(key, data):
+    block = []
+
+    data = data.split(";")
+    iv = b64decode(data[0])
+    data = b64decode(data[1])
+
+    for i in range(int(len(data)/16)):
+        block.append(data[i*16 : i*16 + 16])
+
+    result = []
+
+    result.append(decrypt(block[0], key, iv))
+
+    for i in range(len(block)-1):
+        result.append(decrypt(block[i+1], key, block[i]))
+    data = b"".join(result)
+    data = data.rstrip(b"\x00")
+    return data.decode()
+
+def getData(username):
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    data = (username,)
+    sql = """
+    SELECT card, idNumber
+    FROM users 
+    WHERE username = %s"""
+    cursor.execute(sql,data)
+    values = cursor.fetchall()
+    cursor.close()
+    database.close()
+    card = values[0][0]
+    id = values[0][1]
+    key = PBKDF2(b"HGKTuwY11@!2"+username.encode(), b"PPGuvXffq")
+    holder = []
+    result = read(key,card)
+    holder.append(result)
+    result = read(key,id)
+    holder.append(result)
+    return holder
 
 def loginWithUsername(username):
     sequences = []
@@ -170,7 +217,7 @@ def loginWithPassword(username, password):
     WHERE username = %s"""
     cursor.execute(sql,data)
     count = cursor.fetchall()
-    if count[0][0] == 5:
+    if count[0][0] >= 5:
         cursor.close()
         database.close()
         return None
