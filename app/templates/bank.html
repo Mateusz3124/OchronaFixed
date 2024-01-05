@@ -75,6 +75,8 @@
             {% endif %}
             <form method="post" action="{{ url_for('changePassw')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Old Password:</label><br>
+                <input type="password" name="oldPassword" required><br>
                 <label>New Password:</label><br>
                 <input id="passwordInput" type="password" name="password" oninput="checkStrength()" required><br>
                 <label>Repeat Password:</label><br>

@@ -25,7 +25,7 @@ class Transaction():
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['SECRET_KEY'] = '123c1nrjcn1ictrfwyaid7tc32rcimy87crgts87emgyi32cry89r43y872ym9831yrv87t1guv9mv7842ym7v5t4m198ymv5t27ym45b747mbt5427y62m895tcgv8m924598ytv752uvtm25t7952ym9mtg578b2578yv2tm78g'
 csrf = CSRFProtect(app)
 
 @app.errorhandler(CSRFError)
@@ -83,6 +83,8 @@ def bank():
         while continuation:
             letter = clearInput(request.form.get(f'password{i+1}'))
             i += 1
+            if len(entered_password) == 30:
+                return redirect(url_for('accountChoose', message="Given password is over 30 letters"))
             if len(letter) == 1:
                 counter = 0
                 entered_password += letter
@@ -153,6 +155,23 @@ def data():
     data = getData(session['user'])
     return renderBank("", data[0], data[1])
 
+def checkForCorrectPassword(givenPassword):
+    sequences = loginWithUsername(session['user'])
+
+    random.seed(time.perf_counter())
+    i = random.randint(0, 7)
+    list = sequences[i][0].split(",")
+    sequence = [int(x) for x in list]
+    
+    counter = 0
+    password = ""
+    for letter in givenPassword:
+        if counter not in sequence:
+            password += letter
+        counter += 1
+    checker = loginWithPassword(session['user'], password)
+    return checker
+
 @app.route("/password", methods=['POST'])
 def changePassw():
     if authorizeSesion(request):
@@ -160,9 +179,10 @@ def changePassw():
     
     givenPassword = clearInput(request.form.get("password"))
     repeatedPassword = clearInput(request.form.get("repeatedPassword"))
+    oldPassword = clearInput(request.form.get("oldPassword"))
 
-    if givenPassword in "" or repeatedPassword in "":
-        return renderBank("Incorrect Input must be letters, numbers or !@$%^&*[] and no spaces")
+    if givenPassword in "" or repeatedPassword in "" or oldPassword in "":
+        return renderBank("Incorrect Input must be letters, numbers or !@$%^&*[]")
     
     if givenPassword != repeatedPassword:
         return renderBank("Passwords aren't the same")
@@ -170,6 +190,11 @@ def changePassw():
     if len(givenPassword) > 30 or len(givenPassword) < 10:
         return renderBank("Password lenght is incorrect must be at least 10 letters and maximum of 30 letters")
 
+    checker = checkForCorrectPassword(oldPassword)
+    if checker is None:
+        return renderBank("Reached limit of 5 tries, go to local bank to fix this issue")
+    if checker:     
+        return renderBank('Incorrect Password')
     specialCharacters = "!@$%^&*[]"
     lowerCase = True
     upperCase = True
