@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from api import getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from api import GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import random
 import time
 import re
+import smtplib, ssl
+from email.mime.text import MIMEText
 
 class Transaction():
     Title = None
@@ -155,8 +157,41 @@ def data():
     data = getData(session['user'])
     return renderBank("", data[0], data[1])
 
-def checkForCorrectPassword(givenPassword):
-    sequences = loginWithUsername(session['user'])
+@app.route("/password", methods=['POST'])
+def changePassw():
+    if authorizeSesion(request):
+        return redirect(url_for('accountChoose', message='Please Log In'))
+    link = addPasswordLink()
+    sendEmail(link)
+    session.pop('user')
+    return redirect(url_for('accountChoose', message='Sent email to change password'))
+
+def sendEmail(link):
+    smtp_server = "smtp.gmail.com"
+    port = 587 
+    sender_email = "testOchronaDanychPW@gmail.com"
+    password = "lvfwzupsxywsmgws"
+
+    context = ssl.create_default_context()
+    try:
+        server = smtplib.SMTP(smtp_server,port)
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
+        server.login(sender_email, password)
+        msg = MIMEText(u'<h1>Change of password for your bank</h1> do not click if you were not the one who sent it</br><a href="https://localhost/givePassword?id={}">change password</a>'.format(link),'html')
+        msg['Subject'] = 'Change Of Password'
+        msg['From'] = 'xxx'
+        msg['To'] = 'xxx'
+
+        server.sendmail(sender_email, sender_email, msg.as_string())
+    except Exception as e:
+        print(e)
+    finally:
+        server.quit() 
+
+def checkForCorrectPassword(givenPassword, username):
+    sequences = loginWithUsername(username)
 
     random.seed(time.perf_counter())
     i = random.randint(0, 7)
@@ -169,32 +204,43 @@ def checkForCorrectPassword(givenPassword):
         if counter not in sequence:
             password += letter
         counter += 1
-    checker = loginWithPassword(session['user'], password)
+    checker = loginWithPassword(username, password)
     return checker
 
-@app.route("/password", methods=['POST'])
-def changePassw():
-    if authorizeSesion(request):
-        return redirect(url_for('accountChoose', message='Please Log In'))
+@app.route("/givePassword", methods=['GET','POST'])
+def givePassword():
+    if request.method == "GET":
+        return render_template("changePassword.html", message="")
+    id = clearInput(request.form.get('id'))
+    if id in "" or len(id) > 15:
+        return redirect(url_for('accountChoose', message='Issue with given link'))
+    links = GetPasswordLink()
+    count = True
+    for link in links:
+        if id in link[0]:
+            count = False
+    if count:
+        return redirect(url_for('accountChoose', message='Issue with given link'))
     
+    username = clearInput(request.form.get("username"))    
     givenPassword = clearInput(request.form.get("password"))
     repeatedPassword = clearInput(request.form.get("repeatedPassword"))
     oldPassword = clearInput(request.form.get("oldPassword"))
 
-    if givenPassword in "" or repeatedPassword in "" or oldPassword in "":
-        return renderBank("Incorrect Input must be letters, numbers or !@$%^&*[]")
+    if username in "" or givenPassword in "" or repeatedPassword in "" or oldPassword in "":
+        return render_template("changePassword.html", message="Incorrect Input must be letters, numbers or !@$%^&*[]")
     
     if givenPassword != repeatedPassword:
-        return renderBank("Passwords aren't the same")
+        return render_template("changePassword.html", message="Passwords aren't the same")
 
     if len(givenPassword) > 30 or len(givenPassword) < 10:
-        return renderBank("Password lenght is incorrect must be at least 10 letters and maximum of 30 letters")
+        return render_template("changePassword.html", message="Password lenght is incorrect must be at least 10 letters and maximum of 30 letters")
 
-    checker = checkForCorrectPassword(oldPassword)
+    checker = checkForCorrectPassword(oldPassword,username)
     if checker is None:
-        return renderBank("Reached limit of 5 tries, go to local bank to fix this issue")
+        return render_template("changePassword.html", message="Reached limit of 5 tries, go to local bank to fix this issue")
     if checker:     
-        return renderBank('Incorrect Password')
+        return render_template("changePassword.html", message="Incorrect Password")
     specialCharacters = "!@$%^&*[]"
     lowerCase = True
     upperCase = True
@@ -212,11 +258,12 @@ def changePassw():
             special = False
 
     if lowerCase or upperCase or number or special:
-        return renderBank("Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@$%^&*[]")
+        return changePassword("Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@$%^&*[]")
 
-    changePassword(session['user'], givenPassword)
-    return redirect(url_for('bank', message = "Success, password changed"))
-        
+    changePassword(username, givenPassword)
+    deletePasswordLink(id)
+    return redirect(url_for('accountChoose', message='Changed password'))
+
 def clearInput(text):
     pattern = re.compile(r'^[., a-zA-Z0-9!@$%^&*\[\]]+$')
     if text is None:

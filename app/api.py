@@ -2,11 +2,12 @@ from flask import render_template, request, make_response, redirect, url_for
 from mysql.connector import pooling
 from Crypto.Protocol.KDF import PBKDF2
 import random
+import secrets
+import string
 from passlib.hash import argon2
 from base64 import b64decode
 from Crypto.Cipher import AES
 import time
-
 dbconfig = {
     "host": "172.17.0.1",
     "port": "3306",
@@ -140,20 +141,50 @@ def changePassword(username, password):
     cursor.close()
     database.close()
 
-def loginWithUsernameMethod(username):
+def generateRandomString(length):
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(secrets.choice(characters) for i in range(length))
+    return random_string
+
+def addPasswordLink():
     database = connection_pool.get_connection()
     cursor = database.cursor()
-    data = (username,)
+    hash = generateRandomString(15)  
+    data = (hash,)
     sql = """
-    SELECT passwords.sequence 
-    FROM passwords 
-    JOIN users ON passwords.idUsername = users.id 
-    WHERE users.username = %s"""
-    cursor.execute(sql,data)
-    sequences = cursor.fetchall()
+    INSERT INTO changePassword (idVerification)  
+    VALUES (%s);"""
+    cursor.execute(sql, data)
+    database.commit()
     cursor.close()
     database.close()
-    return sequences
+    return hash
+
+def GetPasswordLink():
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    sql = """
+    SELECT *
+    FROM changePassword"""
+    cursor.execute(sql)
+    hashes = cursor.fetchall()
+    cursor.close()
+    database.close()
+    return hashes
+
+def deletePasswordLink(hash):
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    data = (hash,)
+    sql = """
+    DELETE 
+    FROM changePassword 
+    WHERE idVerification = %s"""
+    cursor.execute(sql, data)
+    database.commit()
+    cursor.close()
+    database.close()
+
 
 def decrypt(data,key, iv):
     aes = AES.new(key, AES.MODE_CBC, iv)
@@ -202,6 +233,21 @@ def getData(username):
     holder.append(result)
     return holder
 
+def loginWithUsernameMethod(username):
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    data = (username,)
+    sql = """
+    SELECT passwords.sequence 
+    FROM passwords 
+    JOIN users ON passwords.idUsername = users.id 
+    WHERE users.username = %s"""
+    cursor.execute(sql,data)
+    sequences = cursor.fetchall()
+    cursor.close()
+    database.close()
+    return sequences
+
 def loginWithUsername(username):
     sequences = []
     sequences = loginWithUsernameMethod(username)
@@ -240,6 +286,15 @@ def loginWithPassword(username, password):
         sql  = """
                        UPDATE users 
                        SET loginCount = loginCount + 1 
+                       WHERE username = %s"""
+        cursor.execute(sql,data)
+        database.commit()
+    else:
+        cursor = database.cursor()
+        data = (username,)
+        sql  = """
+                       UPDATE users 
+                       SET loginCount = 0 
                        WHERE username = %s"""
         cursor.execute(sql,data)
         database.commit()
