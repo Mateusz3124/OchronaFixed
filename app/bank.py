@@ -46,7 +46,6 @@ def main():
         link = addPasswordLink()
         sendEmail(link)
         return redirect(url_for('accountChoose', message='Check your email for verification password'))
-    #make sure to not allow using response time
     ran = random.uniform(0,0.5)
     time.sleep(2 + ran)
     username = clearInput(request.form.get("username"))
@@ -83,7 +82,6 @@ def bank():
         return renderBank(message,card,id)
     
     if request.method == 'POST':
-        #make sure to not allow using response time
         ran = random.uniform(0,0.5)
         time.sleep(5 + ran)
         entered_password = ""
