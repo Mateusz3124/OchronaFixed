@@ -35,8 +35,19 @@ CREATE TABLE passwords (
 );
 
 CREATE TABLE changePassword (
-    idVerification VARCHAR(255)
+    idVerification VARCHAR(255),
+    timestampColumn TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+DELIMITER //
+CREATE EVENT deleteExpiredRows
+ON SCHEDULE EVERY 1 MINUTE
+DO
+  DELETE FROM changePassword WHERE timestampColumn < NOW() - INTERVAL 10 MINUTE;
+//
+DELIMITER ;
+
+SET GLOBAL event_scheduler = ON;
 
 INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('12345678', 'X9/Nw6pCMR2c9Nrb4v9+Kw==;dCA4NlTxRe9OscEOH+3LwMUxXj21J6wl975JJWUga/I=', '2upGw96VwKHTKysy+IWEDA==;Yv6gTCmNZGj6f4Z6MRITyQ==','a23v567891011','0');
 INSERT INTO users (username, card, idNumber, account,loginCount) VALUES ('87654321', 'LkVTdEBE5wulw/an0vOiLw==;llRr/9YXqTrKYmoQdWQgLsx8LG1Gt/34wJa03/woa6g=', '2nhUpMkF6PnQ0lAwj4/MUA==;sSM4IcNaJxNX6ravz4SNgA==', '1234567891011','0');

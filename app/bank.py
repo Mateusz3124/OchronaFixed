@@ -45,7 +45,7 @@ def main():
     if checker == "True":
         link = addPasswordLink()
         sendEmail(link)
-        return redirect(url_for('accountChoose', message='Check your email for verification password'))
+        return redirect(url_for('accountChoose', message='Check your email for verification password, you have only 10 minutes'))
     ran = random.uniform(0,0.5)
     time.sleep(2 + ran)
     username = clearInput(request.form.get("username"))
@@ -261,7 +261,7 @@ def givePassword():
         return render_template("changePassword.html", message="")
     id = clearInput(request.form.get('id'))
     if id in "" or len(id) > 15:
-        return redirect(url_for('accountChoose', message='Issue with given link'))
+        return redirect(url_for('accountChoose', message='Issue with given link, maybe reached limit of 10 minutes'))
     links = GetPasswordLink()
     count = True
     for link in links:
