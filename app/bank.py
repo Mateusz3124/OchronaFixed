@@ -41,7 +41,14 @@ def accountChoose():
 
 @app.route("/main", methods=['POST'])
 def main():
-    time.sleep(2)
+    checker = clearInput(request.form.get("ifchange"))
+    if checker == "True":
+        link = addPasswordLink()
+        sendEmail(link)
+        return redirect(url_for('accountChoose', message='Check your email for verification password'))
+    #make sure to not allow using response time
+    ran = random.uniform(0,0.5)
+    time.sleep(2 + ran)
     username = clearInput(request.form.get("username"))
     sequences = loginWithUsername(username)
     if not sequences:
@@ -76,7 +83,9 @@ def bank():
         return renderBank(message,card,id)
     
     if request.method == 'POST':
-        time.sleep(5)
+        #make sure to not allow using response time
+        ran = random.uniform(0,0.5)
+        time.sleep(5 + ran)
         entered_password = ""
         username = clearInput(request.form.get("username"))
         continuation = True
@@ -161,10 +170,15 @@ def data():
 def changePassw():
     if authorizeSesion(request):
         return redirect(url_for('accountChoose', message='Please Log In'))
-    link = addPasswordLink()
-    sendEmail(link)
+    givenPassword = clearInput(request.form.get("password"))
+    repeatedPassword = clearInput(request.form.get("repeatedPassword"))
+    oldPassword = clearInput(request.form.get("oldPassword"))
+    variable = checkValues(session['user'], givenPassword, repeatedPassword, oldPassword)
+    if variable is not None:
+        return renderBank(variable)
+    changePassword(session['user'], givenPassword)
     session.pop('user')
-    return redirect(url_for('accountChoose', message='Sent email to change password'))
+    return redirect(url_for('accountChoose', message='Changed password'))
 
 def sendEmail(link):
     smtp_server = "smtp.gmail.com"
@@ -179,7 +193,7 @@ def sendEmail(link):
         server.starttls(context=context)
         server.ehlo()
         server.login(sender_email, password)
-        msg = MIMEText(u'<h1>Change of password for your bank</h1> do not click if you were not the one who sent it</br><a href="https://localhost/givePassword?id={}">change password</a>'.format(link),'html')
+        msg = MIMEText(u'<h1>Change of password for your bank</h1> do not click if you were not the one who sent it link: </br><a href="https://localhost/givePassword?id={}">change password</a>'.format(link),'html')
         msg['Subject'] = 'Change Of Password'
         msg['From'] = 'xxx'
         msg['To'] = 'xxx'
@@ -207,6 +221,42 @@ def checkForCorrectPassword(givenPassword, username):
     checker = loginWithPassword(username, password)
     return checker
 
+def checkValues(username, givenPassword, repeatedPassword, oldPassword, ignore=True):
+    if username in "" or givenPassword in "" or repeatedPassword in "" or oldPassword in "":
+        return "Incorrect Input must be letters, numbers or !@$%^&*[]"
+    
+    if givenPassword != repeatedPassword:
+        return "Passwords aren't the same"
+
+    if len(givenPassword) > 30 or len(givenPassword) < 10:
+        return "Password lenght is incorrect must be at least 10 letters and maximum of 30 letters"
+    if ignore:
+        checker = checkForCorrectPassword(oldPassword,username)
+        if checker is None:
+            return "Reached limit of 5 tries, go to local bank to fix this issue"
+        if checker:     
+            return "Incorrect Password"
+    specialCharacters = "!@$%^&*[]"
+    lowerCase = True
+    upperCase = True
+    number = True
+    special = True
+
+    for char in givenPassword:
+        if char.islower():
+            lowerCase = False
+        if char.isupper():
+            upperCase = False
+        if char.isdigit():
+            number = False
+        if char in specialCharacters:
+            special = False
+
+    if lowerCase or upperCase or number or special:
+        return "Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@$%^&*[]"
+
+    return None
+
 @app.route("/givePassword", methods=['GET','POST'])
 def givePassword():
     if request.method == "GET":
@@ -225,44 +275,13 @@ def givePassword():
     username = clearInput(request.form.get("username"))    
     givenPassword = clearInput(request.form.get("password"))
     repeatedPassword = clearInput(request.form.get("repeatedPassword"))
-    oldPassword = clearInput(request.form.get("oldPassword"))
-
-    if username in "" or givenPassword in "" or repeatedPassword in "" or oldPassword in "":
-        return render_template("changePassword.html", message="Incorrect Input must be letters, numbers or !@$%^&*[]")
-    
-    if givenPassword != repeatedPassword:
-        return render_template("changePassword.html", message="Passwords aren't the same")
-
-    if len(givenPassword) > 30 or len(givenPassword) < 10:
-        return render_template("changePassword.html", message="Password lenght is incorrect must be at least 10 letters and maximum of 30 letters")
-
-    checker = checkForCorrectPassword(oldPassword,username)
-    if checker is None:
-        return render_template("changePassword.html", message="Reached limit of 5 tries, go to local bank to fix this issue")
-    if checker:     
-        return render_template("changePassword.html", message="Incorrect Password")
-    specialCharacters = "!@$%^&*[]"
-    lowerCase = True
-    upperCase = True
-    number = True
-    special = True
-
-    for char in givenPassword:
-        if char.islower():
-            lowerCase = False
-        if char.isupper():
-            upperCase = False
-        if char.isdigit():
-            number = False
-        if char in specialCharacters:
-            special = False
-
-    if lowerCase or upperCase or number or special:
-        return changePassword("Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@$%^&*[]")
-
+    variable = checkValues(username, givenPassword, repeatedPassword, "w", False)
+    if variable is not None:
+        return render_template("changePassword.html", message=variable)
     changePassword(username, givenPassword)
     deletePasswordLink(id)
-    return redirect(url_for('accountChoose', message='Changed password'))
+    return redirect(url_for('accountChoose', message='Changed password'))   
+    
 
 def clearInput(text):
     pattern = re.compile(r'^[., a-zA-Z0-9!@$%^&*\[\]]+$')

@@ -75,9 +75,55 @@
             {% endif %}
             <form method="post" action="{{ url_for('changePassw')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <label>Change password:</label><br>
+                <label>Old Password:</label><br>
+                <input type="password" name="oldPassword" required><br>
+                <label>New Password:</label><br>
+                <input id="passwordInput" type="password" name="password" oninput="checkStrength()" required><br>
+                <label>Repeat Password:</label><br>
+                <input type="password" name="repeatedPassword" required><br>
                 <button type="submit">Change Password</button>
             </form>
+            <label id="StrentghOfPassword"></label><br>
+            <script>
+                function checkStrength(){
+                    let stat = {};
+                    var inputElement = document.getElementById("passwordInput");
+                    var text = inputElement.value;
+                    var textLength = text.length;
+                    var element = document.getElementById("StrentghOfPassword");
+                    if (textLength === 0){
+                        element.textContent = ""
+                        return
+                    }
+                    
+                    for (let i = 0; i < text.length; i++) {
+                        let znak = text[i];
+
+                        if (stat[znak]) {
+                            stat[znak] += 1;
+                        } else {
+                            stat[znak] = 1;
+                        }
+                    }
+
+                    let H = 0.0;
+
+                    for (let znak in stat) {
+                        let p_i = stat[znak] / text.length;
+                        H -= p_i * Math.log2(p_i);
+                    }
+
+                    if (H < 1.5){
+                        element.textContent = "weak password"
+                    }
+                    if (H >= 1.5 && H < 2.5){
+                        element.textContent = "moderate password"
+                    }
+                    if (H >= 2.5){
+                        element.textContent = "strong password"
+                    }
+                }
+            </script>
             <p id="mess"><strong>{{message}}</strong></p>
         </div>
         <div id = "second">
