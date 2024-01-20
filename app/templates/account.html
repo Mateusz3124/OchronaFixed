@@ -22,12 +22,15 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h1>Authentication id</h1>
         <br>
+        <p>Authentication id: </p>
         <input type="text" id="user" name="username" required>
         <button type="submit">Login</button>
     </form>
     <form method="post" action="{{ url_for('main') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="ifchange" value="True">
+        <p>Authentication id: </p>
+        <input type="text" id="user" name="userToChange" required>
         <button type="submit">Forgot password</button>
     </form>
     <p id="mess" style="margin-top: 5px;"><strong>{{message}}</strong></p>

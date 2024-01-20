@@ -185,6 +185,21 @@ def deletePasswordLink(hash):
     cursor.close()
     database.close()
 
+def getEmail(username):
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    data = (username,)
+    sql = """
+    SELECT email
+    FROM users 
+    WHERE username = %s"""
+    cursor.execute(sql,data)
+    email = cursor.fetchall()
+    cursor.close()
+    database.close()
+    if len(email) == 0:
+        return None
+    return email[0][0]
 
 def decrypt(data,key, iv):
     aes = AES.new(key, AES.MODE_CBC, iv)
@@ -263,6 +278,8 @@ def loginWithPassword(username, password):
     WHERE username = %s"""
     cursor.execute(sql,data)
     count = cursor.fetchall()
+    if len(count) == 0:
+        return True
     if count[0][0] >= 5:
         cursor.close()
         database.close()

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from api import GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from api import getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
 from flask_wtf.csrf import CSRFProtect, CSRFError
 import random
 import time
@@ -39,12 +39,41 @@ def accountChoose():
     messager = clearInput(request.args.get('message'))
     return render_template("account.html",message = messager)
 
+def sendEmail(link, user):
+    smtp_server = "smtp.gmail.com"
+    port = 587 
+    sender_email = "testOchronaDanychPW@gmail.com"
+    password = "lvfwzupsxywsmgws"
+
+    context = ssl.create_default_context()
+    try:
+        server = smtplib.SMTP(smtp_server,port)
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
+        server.login(sender_email, password)
+        msg = MIMEText(u'<h1>Change of password for your bank</h1> do not click if you were not the one who sent it. LINK: </br><a href="https://localhost/givePassword?id={}">change password</a>'.format(link),'html')
+        msg['Subject'] = 'Change Of Password'
+        msg['From'] = 'xxx'
+        msg['To'] = 'xxx'
+        if getEmail(user):
+            server.sendmail(sender_email, getEmail(user), msg.as_string())
+            return "s"
+        else:
+            return None
+    except Exception as e:
+        print(e)
+    finally:
+        server.quit() 
+
 @app.route("/main", methods=['POST'])
 def main():
     checker = clearInput(request.form.get("ifchange"))
     if checker == "True":
+        user = clearInput(request.form.get("userToChange"))
         link = addPasswordLink()
-        sendEmail(link)
+        if not sendEmail(link, user):
+            return redirect(url_for('accountChoose', message='Issue with email'))
         return redirect(url_for('accountChoose', message='Check your email for verification password, you have only 10 minutes'))
     ran = random.uniform(0,0.5)
     time.sleep(2 + ran)
@@ -63,14 +92,22 @@ def main():
     return render_template("main.html",missing_letters = missing, user = username)
 
 def authorizeSesion(request):
-    if 'user' not in session:
+    if 'user' not in session or 'exp' not in session:
         return True
     else:
+        currentTime = time.time()
+        if currentTime > session['exp']:
+            session.pop('user')
+            session.pop('exp')
+            session.pop('csrf_token')
+            return True
         return False
 
 @app.route("/logout", methods=['POST'])
 def logout():
     session.pop('user')
+    session.pop('exp')
+    session.pop('csrf_token')
     return redirect(url_for('accountChoose'))
 
 @app.route("/bank", methods=['GET', 'POST'])
@@ -110,6 +147,10 @@ def bank():
         if result:     
             return redirect(url_for('accountChoose', message='Incorrect Password or Login'))
         else:
+            currentTime = time.time()
+            oneHour = 3600
+            newTime = currentTime + oneHour
+            session['exp'] = newTime
             session['user'] = username
             resp = make_response(renderBank())
             return resp
@@ -140,22 +181,26 @@ def renderBank(mess = "", card = "", id = ""):
 def addTransaction():
     if authorizeSesion(request):
         return redirect(url_for('accountChoose', message='Please Log In'))
-    title = clearInput(request.form['Title'])
-    amount = clearInput(request.form['Amount'])
-    account = clearInput(request.form['Account'])
-    name = clearInput(request.form['Name'])
-    surname = clearInput(request.form['Surname'])
-    address = clearInput(request.form['Adress'])
+    title = clearInput(request.form.get('Title'))
+    amount = clearInput(request.form.get('Amount'))
+    account = clearInput(request.form.get('Account'))
+    name = clearInput(request.form.get('Name'))
+    surname = clearInput(request.form.get('Surname'))
+    address = clearInput(request.form.get('Adress'))
     if title in "" or amount in "" or account in "" or name in "" or surname in "" or address in "":
+        return redirect(url_for('bank', message = "wrong input in transaction"))
+    amount = amount.replace(',', '.')
+    if "." in amount and len(amount.split('.')[1]) != 2:
+        return redirect(url_for('bank', message = "wrong input in transaction"))
+    try:
+        float(amount)
+    except ValueError:
         return redirect(url_for('bank', message = "wrong input in transaction"))
     transaction = Transaction()
     transaction.set(title,amount,session['user'],account,name,surname,address)
     if sendTransactionToDatabase(transaction):
         return redirect(url_for('bank', message = "wrong recipient"))
     return redirect(url_for('bank', message = "The transaction was succesful"))
-
-
-
 
 @app.route("/personalData", methods=['GET'])
 def data():
@@ -177,30 +222,6 @@ def changePassw():
     changePassword(session['user'], givenPassword)
     session.pop('user')
     return redirect(url_for('accountChoose', message='Changed password'))
-
-def sendEmail(link):
-    smtp_server = "smtp.gmail.com"
-    port = 587 
-    sender_email = "testOchronaDanychPW@gmail.com"
-    password = "lvfwzupsxywsmgws"
-
-    context = ssl.create_default_context()
-    try:
-        server = smtplib.SMTP(smtp_server,port)
-        server.ehlo()
-        server.starttls(context=context)
-        server.ehlo()
-        server.login(sender_email, password)
-        msg = MIMEText(u'<h1>Change of password for your bank</h1> do not click if you were not the one who sent it link: </br><a href="https://localhost/givePassword?id={}">change password</a>'.format(link),'html')
-        msg['Subject'] = 'Change Of Password'
-        msg['From'] = 'xxx'
-        msg['To'] = 'xxx'
-
-        server.sendmail(sender_email, sender_email, msg.as_string())
-    except Exception as e:
-        print(e)
-    finally:
-        server.quit() 
 
 def checkForCorrectPassword(givenPassword, username):
     sequences = loginWithUsername(username)
