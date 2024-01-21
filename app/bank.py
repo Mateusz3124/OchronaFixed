@@ -28,6 +28,9 @@ class Transaction():
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123c1nrjcn1ictrfwyaid7tc32rcimy87crgts87emgyi32cry89r43y872ym9831yrv87t1guv9mv7842ym7v5t4m198ymv5t27ym45b747mbt5427y62m895tcgv8m924598ytv752uvtm25t7952ym9mtg578b2578yv2tm78g'
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 csrf = CSRFProtect(app)
 
 @app.errorhandler(CSRFError)
@@ -56,11 +59,12 @@ def sendEmail(link, user):
         msg['Subject'] = 'Change Of Password'
         msg['From'] = 'xxx'
         msg['To'] = 'xxx'
-        if getEmail(user):
-            server.sendmail(sender_email, getEmail(user), msg.as_string())
-            return "s"
+        email = getEmail(user)
+        if email:
+            server.sendmail(sender_email, email, msg.as_string())
+            return
         else:
-            return None
+            return
     except Exception as e:
         print(e)
     finally:
@@ -68,16 +72,14 @@ def sendEmail(link, user):
 
 @app.route("/main", methods=['POST'])
 def main():
+    username = clearInput(request.form.get("username"))
     checker = clearInput(request.form.get("ifchange"))
     if checker == "True":
-        user = clearInput(request.form.get("userToChange"))
         link = addPasswordLink()
-        if not sendEmail(link, user):
-            return redirect(url_for('accountChoose', message='Issue with email'))
-        return redirect(url_for('accountChoose', message='Check your email for verification password, you have only 10 minutes'))
+        sendEmail(link, username)
+        return redirect(url_for('accountChoose', message='Check your email, you have 10 minutes'))
     ran = random.uniform(0,0.5)
     time.sleep(2 + ran)
-    username = clearInput(request.form.get("username"))
     sequences = loginWithUsername(username)
     if not sequences:
         missing = generateTenValues()
@@ -85,7 +87,7 @@ def main():
         return redirect(url_for('accountChoose', message='Issue with database'))
     else: 
         random.seed(time.perf_counter())
-        i = random.randint(0, 7)
+        i = random.randint(0, 9)
         list = sequences[i][0].split(",")
         intList = [int(x) for x in list]
         missing = intList
@@ -129,7 +131,7 @@ def bank():
         while continuation:
             letter = clearInput(request.form.get(f'password{i+1}'))
             i += 1
-            if len(entered_password) == 30:
+            if len(entered_password) == 31:
                 return redirect(url_for('accountChoose', message="Given password is over 30 letters"))
             if len(letter) == 1:
                 counter = 0
@@ -217,10 +219,14 @@ def changePassw():
     repeatedPassword = clearInput(request.form.get("repeatedPassword"))
     oldPassword = clearInput(request.form.get("oldPassword"))
     variable = checkValues(session['user'], givenPassword, repeatedPassword, oldPassword)
+    if variable is not None and variable in "Reached limit of 5 tries, go to local bank to fix this issue":
+        return logout()
     if variable is not None:
         return renderBank(variable)
     changePassword(session['user'], givenPassword)
     session.pop('user')
+    session.pop('exp')
+    session.pop('csrf_token')
     return redirect(url_for('accountChoose', message='Changed password'))
 
 def checkForCorrectPassword(givenPassword, username):
@@ -254,7 +260,7 @@ def checkValues(username, givenPassword, repeatedPassword, oldPassword, ignore=T
         if checker is None:
             return "Reached limit of 5 tries, go to local bank to fix this issue"
         if checker:     
-            return "Incorrect Password"
+            return "Incorrect Old Password"
     specialCharacters = "!@$%^&*[]"
     lowerCase = True
     upperCase = True
@@ -297,6 +303,8 @@ def givePassword():
     variable = checkValues(username, givenPassword, repeatedPassword, "w", False)
     if variable is not None:
         return render_template("changePassword.html", message=variable)
+    if variable is not None and variable in "Reached limit of 5 tries, go to local bank to fix this issue":
+        return render_template("changePassword.html", message="Reached limit of 5 tries, go to local bank to fix this issue")
     changePassword(username, givenPassword)
     deletePasswordLink(id)
     return redirect(url_for('accountChoose', message='Changed password'))   

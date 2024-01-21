@@ -297,6 +297,7 @@ def loginWithPassword(username, password):
     for passw in passwords:
         if argon2.verify(password, passw[0]):
             containtsPassword = False
+            break
     if containtsPassword:
         cursor = database.cursor()
         data = (username,)
