@@ -1,9 +1,10 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from api import getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from sql import getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from clearInput import clearInput
 from flask_wtf.csrf import CSRFProtect, CSRFError
+import secrets
 import random
 import time
-import re
 import smtplib, ssl
 from email.mime.text import MIMEText
 
@@ -42,6 +43,28 @@ def accountChoose():
     messager = clearInput(request.args.get('message'))
     return render_template("account.html",message = messager)
 
+@app.route("/main", methods=['POST'])
+def main():
+    username = clearInput(request.form.get("username"))
+    checker = clearInput(request.form.get("ifchange"))
+    if checker == "True":
+        link = addPasswordLink()
+        sendEmail(link, username)
+        return redirect(url_for('accountChoose', message='Check your email, you have 10 minutes'))
+    ran = random.uniform(0,0.5)
+    time.sleep(2 + ran)
+    sequences = loginWithUsername(username)
+    if not sequences:
+        missing = generateTenValues()
+    elif len(sequences) != 10:
+        return redirect(url_for('accountChoose', message='Issue with database'))
+    else: 
+        i = secrets.randbelow(10)
+        list = sequences[i][0].split(",")
+        intList = [int(x) for x in list]
+        missing = intList
+    return render_template("main.html",missing_letters = missing, user = username)
+
 def sendEmail(link, user):
     smtp_server = "smtp.gmail.com"
     port = 587 
@@ -70,37 +93,17 @@ def sendEmail(link, user):
     finally:
         server.quit() 
 
-@app.route("/main", methods=['POST'])
-def main():
-    username = clearInput(request.form.get("username"))
-    checker = clearInput(request.form.get("ifchange"))
-    if checker == "True":
-        link = addPasswordLink()
-        sendEmail(link, username)
-        return redirect(url_for('accountChoose', message='Check your email, you have 10 minutes'))
-    ran = random.uniform(0,0.5)
-    time.sleep(2 + ran)
-    sequences = loginWithUsername(username)
-    if not sequences:
-        missing = generateTenValues()
-    elif len(sequences) != 10:
-        return redirect(url_for('accountChoose', message='Issue with database'))
-    else: 
-        random.seed(time.perf_counter())
-        i = random.randint(0, 9)
-        list = sequences[i][0].split(",")
-        intList = [int(x) for x in list]
-        missing = intList
-    return render_template("main.html",missing_letters = missing, user = username)
-
 def authorizeSesion(request):
-    if 'user' not in session or 'exp' not in session:
+    if 'user' not in session or 'exp' not in session or 'ip' not in session:
         return True
+    elif session['ip'] != request.remote_addr:
+        return True 
     else:
         currentTime = time.time()
         if currentTime > session['exp']:
             session.pop('user')
             session.pop('exp')
+            session.pop('ip')
             session.pop('csrf_token')
             return True
         return False
@@ -109,6 +112,7 @@ def authorizeSesion(request):
 def logout():
     session.pop('user')
     session.pop('exp')
+    session.pop('ip')
     session.pop('csrf_token')
     return redirect(url_for('accountChoose'))
 
@@ -152,8 +156,10 @@ def bank():
             currentTime = time.time()
             oneHour = 3600
             newTime = currentTime + oneHour
+            ip = request.remote_addr
             session['exp'] = newTime
             session['user'] = username
+            session['ip'] = ip
             resp = make_response(renderBank())
             return resp
     
@@ -211,29 +217,10 @@ def data():
     data = getData(session['user'])
     return renderBank("", data[0], data[1])
 
-@app.route("/password", methods=['POST'])
-def changePassw():
-    if authorizeSesion(request):
-        return redirect(url_for('accountChoose', message='Please Log In'))
-    givenPassword = clearInput(request.form.get("password"))
-    repeatedPassword = clearInput(request.form.get("repeatedPassword"))
-    oldPassword = clearInput(request.form.get("oldPassword"))
-    variable = checkValues(session['user'], givenPassword, repeatedPassword, oldPassword)
-    if variable is not None and variable in "Reached limit of 5 tries, go to local bank to fix this issue":
-        return logout()
-    if variable is not None:
-        return renderBank(variable)
-    changePassword(session['user'], givenPassword)
-    session.pop('user')
-    session.pop('exp')
-    session.pop('csrf_token')
-    return redirect(url_for('accountChoose', message='Changed password'))
-
 def checkForCorrectPassword(givenPassword, username):
     sequences = loginWithUsername(username)
 
-    random.seed(time.perf_counter())
-    i = random.randint(0, 7)
+    i = secrets.randbelow(10)
     list = sequences[i][0].split(",")
     sequence = [int(x) for x in list]
     
@@ -282,6 +269,24 @@ def checkValues(username, givenPassword, repeatedPassword, oldPassword, ignore=T
 
     return None
 
+@app.route("/password", methods=['POST'])
+def changePassw():
+    if authorizeSesion(request):
+        return redirect(url_for('accountChoose', message='Please Log In'))
+    givenPassword = clearInput(request.form.get("password"))
+    repeatedPassword = clearInput(request.form.get("repeatedPassword"))
+    oldPassword = clearInput(request.form.get("oldPassword"))
+    variable = checkValues(session['user'], givenPassword, repeatedPassword, oldPassword)
+    if variable is not None and variable in "Reached limit of 5 tries, go to local bank to fix this issue":
+        return logout()
+    if variable is not None:
+        return renderBank(variable)
+    changePassword(session['user'], givenPassword)
+    session.pop('user')
+    session.pop('exp')
+    session.pop('csrf_token')
+    return redirect(url_for('accountChoose', message='Changed password'))
+
 @app.route("/givePassword", methods=['GET','POST'])
 def givePassword():
     if request.method == "GET":
@@ -309,18 +314,6 @@ def givePassword():
     deletePasswordLink(id)
     return redirect(url_for('accountChoose', message='Changed password'))   
     
-
-def clearInput(text):
-    pattern = re.compile(r'^[., a-zA-Z0-9!@$%^&*\[\]]+$')
-    if text is None:
-        return ""
-    if len(text) > 60:
-        return ""
-    match = pattern.match(text)
-    if bool(match):
-        return text
-    else:
-        return ""
     
 if __name__ == "__main__":
     from waitress import serve
