@@ -9,13 +9,22 @@
             text-align: center;
             margin: 5px;
         }
+        #better-label{
+            width: 200px;
+            margin: 5px;
+        }
         #mess {
+            margin-top: -3px;
             font-size: 25px;
         }
         #first {
             float: left;
         }
         #second {
+            margin-left: 50px;
+            float: left;
+        }
+        #third {
             margin-left: 50px;
             float: left;
         }
@@ -33,10 +42,12 @@
 <body>
     <div>
         <div id = "first">
+            <p id="mess"><strong>Account: {{account}} || Available balance: {{balance}}</strong></p>
             <form method="post" action="{{ url_for('logout')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit">Logout</button>
             </form>
+            <h1>Add transaction:</h1>
             <form method="post" action="{{ url_for('addTransaction')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label>Title:</label><br>
@@ -54,7 +65,7 @@
                 <label>Surname:</label><br>
                 <input type="text" name="Surname" required><br>
 
-                <label>Adress:</label><br>
+                <label>Address:</label><br>
                 <input type="text" name="Adress" required><br>
         
                 <button type="submit">Add transaction</button>
@@ -75,6 +86,7 @@
             {% endif %}
             <form method="post" action="{{ url_for('changePassw')}}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <h1>Change Password:</h1><br>
                 <label>Old Password:</label><br>
                 <input type="password" name="oldPassword" required><br>
                 <label>New Password:</label><br>
@@ -137,10 +149,13 @@
                   <li>Recipient Account: {{ item.Account }}</li>
                   <li>Recipient Name: {{ item.Name }}</li>
                   <li>Recipient Surname: {{ item.Surname }}</li>
-                  <li>Recipient Adress: {{ item.Adress }}</li>
+                  <li>Recipient Address: {{ item.Adress }}</li>
                 </div>
                 {% endfor %}
             </ul>
+        </div>
+        <div id ="third">
+            <p id="mess"><strong>{{message}}</strong></p>
         </div>
     </div>
 </body>

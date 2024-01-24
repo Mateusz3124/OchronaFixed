@@ -30,7 +30,12 @@
                 <input type="password" maxlength="1" name="password{{ loop.index }}" required>
             {% endif %}
         {% endfor %}
-        <input type="password" maxlength="1" name="password11" oninput="addExtraInput(this)">
+        {% if 10 in missing_letters%}
+            <input class="block" readonly></input>
+            <input type="password" maxlength="1" name="password12" oninput="addExtraInput(this)">
+        {%else%}
+            <input type="password" maxlength="1" name="password11" oninput="addExtraInput(this)">
+        {%endif%}
         </div>
         <br>
         <button style="margin-top: 10px;" type="submit">Login</button>
