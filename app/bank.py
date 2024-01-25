@@ -73,7 +73,6 @@ def main():
 
 def authorizeSesion(request):
     if 'user' not in session or 'exp' not in session or 'ip' not in session:
-        print(session)
         return True
     elif session['ip'] != request.access_route[-1]:
         return True 
