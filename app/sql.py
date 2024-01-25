@@ -252,11 +252,12 @@ def generateRandomString(length):
     random_string = ''.join(secrets.choice(characters) for i in range(length))
     return random_string
 
-def addPasswordLink(request):
+def addPasswordLink(request, username):
     database = connection_pool.get_connection()
     cursor = database.cursor()
     hash = generateRandomString(15)
-    secretHash = generateRandomString(15) +":"+str(request.access_route[-1])    
+    value = blake(username, str(request.access_route[-1]))
+    secretHash = value +":"+str(request.access_route[-1])    
 
     data = (hash, secretHash)
     sql = """
@@ -400,14 +401,14 @@ def loginWithPassword(username, password):
     passwords = cursor.fetchall()
 
     cursor.close()
-    containtsPassword = True
+    containtsPassword = False
 
     for passw in passwords:
         if argon2.verify(password, passw[0]):
-            containtsPassword = False
+            containtsPassword = True
             break
 
-    if containtsPassword:
+    if not containtsPassword:
         cursor = database.cursor()
         data = (username,)
         sql  = """
@@ -429,4 +430,4 @@ def loginWithPassword(username, password):
 
     cursor.close()
     database.close()
-    return containtsPassword
+    return not containtsPassword

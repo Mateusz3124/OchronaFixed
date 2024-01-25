@@ -3,41 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Page</title>
-    <style>
-        input {
-            width: 200px;
-            text-align: center;
-            margin: 5px;
-        }
-        #better-label{
-            width: 200px;
-            margin: 5px;
-        }
-        #mess {
-            margin-top: -3px;
-            font-size: 25px;
-        }
-        #first {
-            float: left;
-        }
-        #second {
-            margin-left: 50px;
-            float: left;
-        }
-        #third {
-            margin-left: 50px;
-            float: left;
-        }
-        ul {
-            list-style-type: none;
-        }
-        .cont {
-            border: 1px;
-            border-style: solid;
-            padding: 5px;
-            margin-bottom: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href= "{{ url_for('static',filename='styles/bank.css') }}">
 </head>
 <body>
     <div>
@@ -96,46 +62,7 @@
                 <button type="submit">Change Password</button>
             </form>
             <label id="StrentghOfPassword"></label><br>
-            <script>
-                function checkStrength(){
-                    let stat = {};
-                    var inputElement = document.getElementById("passwordInput");
-                    var text = inputElement.value;
-                    var textLength = text.length;
-                    var element = document.getElementById("StrentghOfPassword");
-                    if (textLength === 0){
-                        element.textContent = ""
-                        return
-                    }
-                    
-                    for (let i = 0; i < text.length; i++) {
-                        let znak = text[i];
-
-                        if (stat[znak]) {
-                            stat[znak] += 1;
-                        } else {
-                            stat[znak] = 1;
-                        }
-                    }
-
-                    let H = 0.0;
-
-                    for (let znak in stat) {
-                        let p_i = stat[znak] / text.length;
-                        H -= p_i * Math.log2(p_i);
-                    }
-
-                    if (H < 1.5){
-                        element.textContent = "weak password"
-                    }
-                    if (H >= 1.5 && H < 2.5){
-                        element.textContent = "moderate password"
-                    }
-                    if (H >= 2.5){
-                        element.textContent = "strong password"
-                    }
-                }
-            </script>
+            <script type="text/javascript" src="{{ url_for('static',filename='checkPassword.js') }}"></script>
             <p id="mess"><strong>{{message}}</strong></p>
         </div>
         <div id = "second">

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from sql import setBalance, getBalanceFromAccount, getInfoAboutUser, getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from sql import blake, setBalance, getBalanceFromAccount, getInfoAboutUser, getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
 from clearInput import clearInput, clearInputPassword
 from sendEmail import sendEmail
 from flask_wtf.csrf import CSRFProtect, CSRFError
@@ -49,7 +49,7 @@ def main():
     username = clearInput(request.form.get("username"))
     checker = clearInput(request.form.get("ifchange"))
     if checker == "True":
-        result = addPasswordLink(request)
+        result = addPasswordLink(request, username)
         msg = MIMEText(u'<h1>Change of password for your bank</h1>remember do not use any other device than the one from which you sent request to change password and do not click if you were not the one who sent it. LINK: </br><a href="https://localhost/givePassword?id={}">change password</a>'.format(result[0]),'html')
         email = getEmail(username)
         if email:
@@ -245,22 +245,22 @@ def checkValues(username, givenPassword, repeatedPassword, oldPassword, ignore=T
         if checker:     
             return "Incorrect Old Password"
     specialCharacters = "!@#$%^&*()[]"
-    lowerCase = True
-    upperCase = True
-    number = True
-    special = True
+    lowerCase = False
+    upperCase = False
+    number = False
+    special = False
 
     for char in givenPassword:
         if char.islower():
-            lowerCase = False
+            lowerCase = True
         if char.isupper():
-            upperCase = False
+            upperCase = True
         if char.isdigit():
-            number = False
+            number = True
         if char in specialCharacters:
-            special = False
+            special = True
 
-    if lowerCase or upperCase or number or special:
+    if not lowerCase or not upperCase or not number or not special:
         return "Passwords doesn't contain all necessary elements. Password need to have one lowercase letter, one uppercase letter, one number, and one of these symbols: !@#$%^&*()[]"
 
     return None
@@ -292,9 +292,14 @@ def givePassword():
     secretValue = clearInput(result[0])
     ip = clearInput(result[1])
     id = clearInput(request.form.get('id'))
-    if id in "" or secretValue in "" or ip in "" or len(id) > 15 or len(secretValue) > 15:
+    if id in "" or secretValue in "" or ip in "" or len(id) > 15:
         return redirect(url_for('accountChoose', message='Issue with given link, maybe reached limit of 10 minutes'))
     if request.access_route[-1] != ip:
+        return redirect(url_for('accountChoose', message='Please repeat but do not change internet connection'))
+    
+    username = clearInput(request.form.get("username")) 
+
+    if secretValue != blake(username, str(request.access_route[-1])):
         return redirect(url_for('accountChoose', message='Please repeat but do not change internet connection'))
     links = GetPasswordLink()
     count = True
@@ -303,8 +308,7 @@ def givePassword():
             count = False
     if count:
         return redirect(url_for('accountChoose', message='Issue with given link'))
-    
-    username = clearInputPassword(request.form.get("username"))    
+       
     givenPassword = clearInputPassword(request.form.get("password"))
     repeatedPassword = clearInputPassword(request.form.get("repeatedPassword"))
     variable = checkValues(username, givenPassword, repeatedPassword, "w", False)

@@ -3,20 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Account Page</title>
-    <style>
-        input {
-            width: 20.67px;
-            text-align: center;
-            margin: 5px;
-            margin-top: 0px;
-        }
-        #user {
-            width:auto;
-        }
-        #mess {
-            font-size: 25px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static',filename='styles/account.css') }}">
 </head>
 <body>
     <form method="post" action="{{ url_for('main') }}">
@@ -24,11 +11,11 @@
         <h1>Authentication id</h1>
         <br>
         <div>
-            <p style="float: left; margin-top: 0%;">Authentication id: </p>
-            <input style="float: left;" type="text" id="user" name="username" required>
-            <button style="float: left;" type="submit">Login</button>
+            <p>Authentication id: </p>
+            <input type="text" id="user" name="username" required>
+            <button type="submit">Login</button>
         </div>
     </form>
-    <p id="mess" style="margin-top: 50px;"><strong>{{message}}</strong></p>
+    <p id="mess" ><strong>{{message}}</strong></p>
 </body>
 </html>
