@@ -1,7 +1,0 @@
-docker-compose down
-docker-compose build
-docker-compose up
-
-sudo docker build --tag 'nginx' .
-sudo docker run -p 80:80 -p 443:443 --detach 'nginx'
-curl -L --insecure http://localhost:80
