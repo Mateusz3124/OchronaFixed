@@ -256,7 +256,7 @@ def addPasswordLink(request):
     database = connection_pool.get_connection()
     cursor = database.cursor()
     hash = generateRandomString(15)
-    secretHash = generateRandomString(15) +":"+str(request.remote_addr)    
+    secretHash = generateRandomString(15) +":"+str(request.access_route[-1])    
 
     data = (hash, secretHash)
     sql = """
