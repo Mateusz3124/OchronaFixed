@@ -35,6 +35,11 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
 
 csrf = CSRFProtect(app)
 
+@app.after_request
+def add_security_headers(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline';"
+    return response
+
 @app.errorhandler(Exception)
 def handle_error(error):
     return redirect(url_for('accountChoose', message='Something went wrong try logging again'))
