@@ -9,9 +9,7 @@ def sendEmail(email, msg):
     context = ssl.create_default_context()
     try:
         server = smtplib.SMTP(smtp_server,port)
-        server.ehlo()
         server.starttls(context=context)
-        server.ehlo()
         server.login(sender_email, password)
         msg['Subject'] = 'Notification from bank'
         msg['From'] = 'xxx'
@@ -22,7 +20,7 @@ def sendEmail(email, msg):
         else:
             return
     except Exception as e:
-        #implement here
-        print(e)
+        # implement better solution for feature
+        sendEmail("testOchronaDanychPW@gmail.com", e)
     finally:
         server.quit() 
