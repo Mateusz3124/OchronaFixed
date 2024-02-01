@@ -28,7 +28,7 @@
         <br>
         <button style="margin-top: 10px;" type="submit">Login</button>
     </form>
-    <form method="post" action="{{ url_for('main') }}">
+    <form method="post" action="{{ url_for('givePassword') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="ifchange" value="True">
         <input type="hidden" name="username" value="{{ user }}">

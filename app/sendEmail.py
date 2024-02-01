@@ -3,8 +3,9 @@ import smtplib, ssl
 def sendEmail(email, msg):
     smtp_server = "smtp.gmail.com"
     port = 587 
-    sender_email = "testOchronaDanychPW@gmail.com"
-    password = "lvfwzupsxywsmgws"
+    #email from which you want to send mails
+    sender_email = ""
+    password = ""
 
     context = ssl.create_default_context()
     try:
@@ -20,7 +21,6 @@ def sendEmail(email, msg):
         else:
             return
     except Exception as e:
-        # implement better solution for feature
-        sendEmail("testOchronaDanychPW@gmail.com", e)
+        print(e)
     finally:
         server.quit() 

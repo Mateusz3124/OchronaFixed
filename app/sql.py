@@ -1,6 +1,5 @@
 from mysql.connector import pooling
 from Crypto.Protocol.KDF import PBKDF2
-import random
 import secrets
 import string
 from passlib.hash import argon2
@@ -19,26 +18,26 @@ dbconfig = {
 connection_pool = pooling.MySQLConnectionPool(pool_name="mypool", pool_size=4, **dbconfig)
 
 def generateTenValues():
-    condition = True    
+    generatingSequence = True    
 
-    while(condition):
-        condition = False
+    while generatingSequence:
+        generatingSequence = False
         randomNumbers = [(secrets.randbelow(30)) for i in range(10)]
         sortedNumbers = sorted(randomNumbers)
-        holder = -1
-        counter = 0
+        previousNumber = -1
+        numberOfElementsBelowTen = 0
 
         for value in sortedNumbers:
             if value < 10:
-                counter = counter + 1
-            if holder + 1 == value or holder == value:
-                condition = True
+                numberOfElementsBelowTen = numberOfElementsBelowTen + 1
+            if previousNumber + 1 == value or previousNumber == value:
+                generatingSequence = True
                 continue
             else:
-                holder = value
+                previousNumber = value
 
-        if counter < 2:
-            condition = True
+        if numberOfElementsBelowTen < 2:
+            generatingSequence = True
 
     return sortedNumbers
 
@@ -71,35 +70,35 @@ def sendTransactionToDatabase(transaction):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (transaction.FromAccount,)
+    val = (transaction.FromAccount,)
     sql = """
     SELECT id, account 
     FROM users 
     Where username = %s"""
-    cursor.execute(sql, data)
-    idSender = cursor.fetchone()
+    cursor.execute(sql, val)
+    dataSender = cursor.fetchone()
     
-    data = (transaction.Account,)
+    val = (transaction.Account,)
     sql = """
     SELECT id 
     FROM users 
     Where account = %s"""
-    cursor.execute(sql, data)
-    idRecipient = cursor.fetchone()
+    cursor.execute(sql, val)
+    dataRecipient = cursor.fetchone()
 
-    if not idRecipient:
+    if not dataRecipient:
         return True
-    if idRecipient[0] == idSender[0]:
+    if dataRecipient[0] == dataSender[0]:
         return True
 
-    data = (transaction.Title,transaction.Amount, idSender[1], transaction.Account,transaction.Name,transaction.Surname,transaction.Adress, idSender[0])
+    val = (transaction.Title,transaction.Amount, dataSender[1], transaction.Account,transaction.Name,transaction.Surname,transaction.Adress, dataSender[0])
     sql = """
     INSERT INTO transactions (title, amount, fromAccount, account, name, surname, address, idUsername) 
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
-    cursor.execute(sql,data)
+    cursor.execute(sql,val)
     database.commit()
-    data = (transaction.Title,transaction.Amount,idSender[1],transaction.Account,transaction.Name,transaction.Surname,transaction.Adress, idRecipient[0])
-    cursor.execute(sql,data)
+    val = (transaction.Title,transaction.Amount,dataSender[1],transaction.Account,transaction.Name,transaction.Surname,transaction.Adress, dataRecipient[0])
+    cursor.execute(sql,val)
     database.commit()
     
     cursor.close()
@@ -111,24 +110,24 @@ def getTransaction(user):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (user,)
+    val = (user,)
     sql = """
     SELECT transactions.* 
     FROM transactions 
     JOIN users ON transactions.idUsername = users.id 
     WHERE users.username = %s"""
-    cursor.execute(sql,data)
-    data = cursor.fetchall()
+    cursor.execute(sql,val)
+    transactions = cursor.fetchall()
 
     cursor.close()
     database.close()
 
-    for container in data:
+    for container in transactions:
         for item in container:
             if clearInput(item) in "":
                 return ""
             
-    return data
+    return transactions
 
 def blake(user,value):
     secretKey = b"BKgasdqw3#!@#412fuiu[][fdDAgafhu3424fsfds;''[54]"
@@ -141,49 +140,49 @@ def getInfoAboutUser(user):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (user,)
+    val = (user,)
     sql = """
     SELECT amount, account
     FROM users 
     WHERE username = %s"""
-    cursor.execute(sql,data)
-    data = cursor.fetchone()
+    cursor.execute(sql,val)
+    dataUser = cursor.fetchone()
 
     cursor.close()
     database.close()
 
-    for item in data:
+    for item in dataUser:
         if clearInput(item) in "":
             return ""
         
-    holder = data[0].split(",")
+    holder = dataUser[0].split(",")
     expected = blake(user,holder[0])
     if expected != holder[1]:
         return ""
     
-    return data
+    return dataUser
 
 def getBalanceFromAccount(account):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (account,)
+    val = (account,)
     sql = """
     SELECT amount, username
     FROM users 
     WHERE account = %s"""
-    cursor.execute(sql,data)
-    data = cursor.fetchone()
+    cursor.execute(sql,val)
+    dataAboutAccount = cursor.fetchone()
 
     cursor.close()
     database.close()
 
-    holder = data[0].split(",")
-    expected = blake(data[1],holder[0])
+    holder = dataAboutAccount[0].split(",")
+    expected = blake(dataAboutAccount[1],holder[0])
     if expected != holder[1]:
         return ""
     
-    return data
+    return dataAboutAccount
 
 def setBalance(accountFrom, accountTarget, balanceFrom, balanceTarget, user, targetUser):
     database = connection_pool.get_connection()
@@ -191,22 +190,22 @@ def setBalance(accountFrom, accountTarget, balanceFrom, balanceTarget, user, tar
 
     value = str(balanceFrom) + "," + blake(user, str(balanceFrom))
 
-    data = (value, accountFrom)
+    val = (value, accountFrom)
     sql = """
     Update users
     Set amount = %s 
     Where account = %s;"""
-    cursor.execute(sql, data)
+    cursor.execute(sql, val)
     database.commit()
 
     valueTarget = str(balanceTarget) + "," + blake(targetUser, str(balanceTarget))
 
-    data = (valueTarget, accountTarget)
+    val = (valueTarget, accountTarget)
     sql = """
     Update users
     Set amount = %s 
     Where account = %s;"""
-    cursor.execute(sql, data)
+    cursor.execute(sql, val)
     database.commit()
 
     cursor.close()
@@ -217,12 +216,12 @@ def changePassword(username, password):
     passwordsWithSequences = generatePasswords(password)
     cursor = database.cursor()
 
-    data = (username,)
+    val = (username,)
     sql = """
     SELECT id 
     FROM users 
     Where username = %s"""
-    cursor.execute(sql, data)
+    cursor.execute(sql, val)
     idUsername = cursor.fetchone()
 
     sql = """
@@ -236,11 +235,11 @@ def changePassword(username, password):
     for elem in passwordsWithSequences:
         cursor = database.cursor()     
 
-        data = (elem[0], ",".join(str(num) for num in elem[1]), idUsername[0])
+        val = (elem[0], ",".join(str(num) for num in elem[1]), idUsername[0])
         sql = """
         INSERT INTO passwords (password, sequence, idUsername) 
         VALUES (%s, %s, %s);"""
-        cursor.execute(sql,data)
+        cursor.execute(sql,val)
         database.commit()
         cursor.close()
     
@@ -249,26 +248,26 @@ def changePassword(username, password):
 
 def generateRandomString(length):
     characters = string.ascii_letters + string.digits
-    random_string = ''.join(secrets.choice(characters) for i in range(length))
-    return random_string
+    randomString = ''.join(secrets.choice(characters) for i in range(length))
+    return randomString
 
 def addPasswordLink(request, username):
     database = connection_pool.get_connection()
     cursor = database.cursor()
-    hash = generateRandomString(15)
+    hashWebsiteUrl = generateRandomString(15)
     value = blake(username, str(request.access_route[-1]))
-    secretHash = value +":"+str(request.access_route[-1])    
+    hashCookie = value +":"+str(request.access_route[-1])    
 
-    data = (hash, secretHash)
+    val = (hashWebsiteUrl, hashCookie)
     sql = """
     INSERT INTO changePassword (idVerification, secretIdVerification)  
     VALUES (%s,%s);"""
-    cursor.execute(sql, data)
+    cursor.execute(sql, val)
     database.commit()
 
     cursor.close()
     database.close()
-    return [hash,secretHash]
+    return [hashWebsiteUrl,hashCookie]
 
 def GetPasswordLink():
     database = connection_pool.get_connection()
@@ -278,22 +277,22 @@ def GetPasswordLink():
     SELECT *
     FROM changePassword"""
     cursor.execute(sql)
-    hashes = cursor.fetchall()
+    links = cursor.fetchall()
 
     cursor.close()
     database.close()
-    return hashes
+    return links
 
 def deletePasswordLink(hash):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (hash,)
+    val = (hash,)
     sql = """
     DELETE 
     FROM changePassword 
     WHERE idVerification = %s"""
-    cursor.execute(sql, data)
+    cursor.execute(sql, val)
     database.commit()
 
     cursor.close()
@@ -303,12 +302,12 @@ def getEmail(username):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (username,)
+    val = (username,)
     sql = """
     SELECT email
     FROM users 
     WHERE username = %s"""
-    cursor.execute(sql,data)
+    cursor.execute(sql,val)
     email = cursor.fetchone()
 
     cursor.close()
@@ -331,40 +330,43 @@ def read(key, data):
     res= decrypt(text,key,AES.MODE_GCM)
     return res.decode()
 
-def getData(username):
+def getPersonalData(username):
     database = connection_pool.get_connection()
     cursor = database.cursor()
-    data = (username,)
+
+    val = (username,)
     sql = """
     SELECT card, idNumber
     FROM users 
     WHERE username = %s"""
-    cursor.execute(sql,data)
+    cursor.execute(sql,val)
+
     values = cursor.fetchone()
     cursor.close()
     database.close()
+
     card = values[0]
     id = values[1]
     key = PBKDF2(b"HGKTuwY11@!2"+username.encode(), b"PPGuvXffq")
-    holder = []
+    personalData = []
     result = read(key,card)
-    holder.append(result)
+    personalData.append(result)
     result = read(key,id)
-    holder.append(result)
-    return holder
+    personalData.append(result)
+    return personalData
 
 def loginWithUsername(username):
     sequences = []
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (username,)
+    val = (username,)
     sql = """
     SELECT passwords.sequence 
     FROM passwords 
     JOIN users ON passwords.idUsername = users.id 
     WHERE users.username = %s"""
-    cursor.execute(sql,data)
+    cursor.execute(sql,val)
     sequences = cursor.fetchall()
 
     cursor.close()
@@ -375,29 +377,29 @@ def loginWithPassword(username, password):
     database = connection_pool.get_connection()
     cursor = database.cursor()
 
-    data = (username,)
+    val = (username,)
     sql = """
     SELECT loginCount
     FROM users 
     WHERE username = %s"""
-    cursor.execute(sql,data)
-    count = cursor.fetchone()
+    cursor.execute(sql,val)
+    countOfFailedLogins = cursor.fetchone()
 
-    if len(count) == 0:
+    if len(countOfFailedLogins) == 0:
         return True
     
-    if count[0] >= 5:
+    if countOfFailedLogins[0] >= 5:
         cursor.close()
         database.close()
         return None
     
-    data = (username,)
+    val = (username,)
     sql = """
     SELECT passwords.password 
     FROM passwords 
     JOIN users ON passwords.idUsername = users.id 
     WHERE users.username = %s"""
-    cursor.execute(sql,data)
+    cursor.execute(sql,val)
     passwords = cursor.fetchall()
 
     cursor.close()
@@ -410,22 +412,22 @@ def loginWithPassword(username, password):
 
     if not containtsPassword:
         cursor = database.cursor()
-        data = (username,)
+        val = (username,)
         sql  = """
                        UPDATE users 
                        SET loginCount = loginCount + 1 
                        WHERE username = %s"""
-        cursor.execute(sql,data)
+        cursor.execute(sql,val)
         database.commit()
 
     else:
         cursor = database.cursor()
-        data = (username,)
+        val = (username,)
         sql  = """
                        UPDATE users 
                        SET loginCount = 0 
                        WHERE username = %s"""
-        cursor.execute(sql,data)
+        cursor.execute(sql,val)
         database.commit()
 
     cursor.close()

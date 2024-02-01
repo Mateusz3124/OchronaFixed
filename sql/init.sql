@@ -1,7 +1,5 @@
--- Create the "bank" database
 CREATE DATABASE IF NOT EXISTS bank;
 
--- Use the "bank" database
 USE bank;
 
 CREATE TABLE users (
