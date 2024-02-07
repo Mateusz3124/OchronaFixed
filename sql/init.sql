@@ -10,6 +10,7 @@ CREATE TABLE users (
     card VARCHAR(255),
     email VARCHAR(255),
     loginCount INT,
+    currentSequence INT,
     idNumber VARCHAR(255)
 );
 
@@ -50,8 +51,8 @@ DELIMITER ;
 
 SET GLOBAL event_scheduler = ON;
 
-INSERT INTO users (email, username, card, idNumber, account,loginCount, amount) VALUES ('testOchronaDanychPW@gmail.com','12345678', 'Jypa+kGBGNEM+IQGcwHTgA==;qyOTKRWbBeAMWVNz9IVw+w==;41CQoX9phbhl9sF9hQDGiA==', 'sdSCi+JKAHuq;QkTzpUA7ZfTni7jphZaKHQ==;3Xv2fjBYbtE7NfQ6hPLULA==','a23v567891011','0', '25121.21,e1f7cc2ce4fc92cd6b354917f0b26d177562554be783547d4e20148479bb');
-INSERT INTO users (email, username, card, idNumber, account,loginCount, amount) VALUES ('testOchronaDanychPW@gmail.com','87654321', 'RacDUUT0AlRnGcZUKE8XBA==;ut7OCEmtdul8gZh57XpstA==;HCw3KJH2qvdjf1gvP4PVrw==','F/Mb5E3OoJr5;bE2zfn8bkZ4aebg+vX9hwQ==;DOyo4iSbK9hRt97s01zsLg==','1234567891011','0','22134.11,b26f6bd9dfbdae56e23cf74c314d629d571b868de200e5e780cedbe7f37f');
+INSERT INTO users (email, username, card, idNumber, account,loginCount, amount, currentSequence) VALUES ('testOchronaDanychPW@gmail.com','12345678', 'Jypa+kGBGNEM+IQGcwHTgA==;qyOTKRWbBeAMWVNz9IVw+w==;41CQoX9phbhl9sF9hQDGiA==', 'sdSCi+JKAHuq;QkTzpUA7ZfTni7jphZaKHQ==;3Xv2fjBYbtE7NfQ6hPLULA==','a23v567891011','0', '25121.21,e1f7cc2ce4fc92cd6b354917f0b26d177562554be783547d4e20148479bb','2');
+INSERT INTO users (email, username, card, idNumber, account,loginCount, amount, currentSequence) VALUES ('testOchronaDanychPW@gmail.com','87654321', 'RacDUUT0AlRnGcZUKE8XBA==;ut7OCEmtdul8gZh57XpstA==;HCw3KJH2qvdjf1gvP4PVrw==','F/Mb5E3OoJr5;bE2zfn8bkZ4aebg+vX9hwQ==;DOyo4iSbK9hRt97s01zsLg==','1234567891011','0','22134.11,b26f6bd9dfbdae56e23cf74c314d629d571b868de200e5e780cedbe7f37f','2');
 
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$vBcCAOB8T4kxxtibU4qRUg$oHjXNmpuaFW4W/lLA5eTL8zoZTD4YaEQ1VmrCojwJes', '2,5,14,17,19,22,24,29','1');
 INSERT INTO passwords (password, sequence, idUsername) VALUES ('$argon2id$v=19$m=65536,t=3,p=4$7N2717rXuleqldIa49y7lw$m3zJWgqwtZW8Y8Sum6G8tG3f8Wen2z3wvrLC4V0XHxA', '6,10,13,16,20,22,26,28','1');

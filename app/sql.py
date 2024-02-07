@@ -215,7 +215,7 @@ def changePassword(username, password):
     database = connection_pool.get_connection()
     passwordsWithSequences = generatePasswords(password)
     cursor = database.cursor()
-
+    
     val = (username,)
     sql = """
     SELECT id 
@@ -231,7 +231,6 @@ def changePassword(username, password):
     cursor.execute(sql,idUsername)
     database.commit()
     cursor.close()
-
     for elem in passwordsWithSequences:
         cursor = database.cursor()     
 
@@ -369,9 +368,17 @@ def loginWithUsername(username):
     cursor.execute(sql,val)
     sequences = cursor.fetchall()
 
+    val = (username,)
+    sql = """
+    SELECT currentSequence 
+    FROM users 
+    WHERE username = %s"""
+    cursor.execute(sql,val)
+    currentSequence = cursor.fetchone()
+
     cursor.close()
     database.close()
-    return sequences
+    return sequences, currentSequence
 
 def loginWithPassword(username, password):
     database = connection_pool.get_connection()
@@ -433,3 +440,19 @@ def loginWithPassword(username, password):
     cursor.close()
     database.close()
     return not containtsPassword
+
+def changeCurrentSequence(username):
+    database = connection_pool.get_connection()
+    cursor = database.cursor()
+    random = secrets.randbelow(10)
+    val = (random, username)
+    sql = """
+    UPDATE users
+    SET currentSequence = %s
+    WHERE users.username = %s"""
+    cursor.execute(sql,val)
+    database.commit()
+
+    cursor.close()
+    database.close()
+    return

@@ -15,20 +15,20 @@
             {% if i in missing_letters %}
                 <input class="block" readonly></input>
             {% else %}
-                <input type="password" maxlength="1" name="password{{ loop.index }}" required>
+                <input type="password" maxlength="1" name="password{{ loop.index }}" onkeydown="onKeyClick(event, this)" oninput="moveRightAfterInput(event, this)" required>
             {% endif %}
         {% endfor %}
         {% if 10 in missing_letters%}
             <input class="block" readonly></input>
-            <input type="password" maxlength="1" name="password12" oninput="addExtraInput(this)">
+            <input type="password" maxlength="1" name="password12" onkeydown="onKeyClick(event, this)" oninput="addExtraInput(this)">
         {%else%}
-            <input type="password" maxlength="1" name="password11" oninput="addExtraInput(this)">
+            <input type="password" maxlength="1" name="password11" onkeydown="onKeyClick(event, this)" oninput="addExtraInput(this)">
         {%endif%}
         </div>
         <br>
-        <button style="margin-top: 10px;" type="submit">Login</button>
+        <button type="submit">Login</button>
     </form>
-    <form method="post" action="{{ url_for('givePassword') }}">
+    <form method="post" action="{{ url_for('main') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="ifchange" value="True">
         <input type="hidden" name="username" value="{{ user }}">
@@ -36,6 +36,46 @@
     </form>
     <script>
         let flags = {};
+        function moveRightAfterInput(event, object){
+            if(event.data == null){
+                return;
+            }
+            event.preventDefault();
+            object.value = event.data;
+            var nextElement = object.nextElementSibling;
+            if(nextElement != null && nextElement.classList[0] === "block"){
+                nextElement = nextElement.nextElementSibling;
+            }
+            if(nextElement){
+                nextElement.focus();
+                event.key = "";
+            }
+        }
+        function onKeyClick(event, object){
+            if(event.key === 'ArrowLeft'){
+                event.preventDefault();
+                var previousElement = object.previousElementSibling;
+                if(previousElement != null  && previousElement.classList[0] === "block"){
+                    previousElement = previousElement.previousElementSibling;
+                }
+                if(previousElement){
+                    previousElement.focus();
+                    previousElement.selectionStart = previousElement.selectionEnd = previousElement.value.length;
+                }
+                return;
+            }
+            if(event.key === 'ArrowRight'){
+                event.preventDefault();
+                var nextElement = object.nextElementSibling;
+                if(nextElement != null && nextElement.classList[0] === "block"){
+                    nextElement = nextElement.nextElementSibling;
+                }
+                if(nextElement){
+                    nextElement.focus();
+                }
+                return;
+            }
+        }
         function addExtraInput(object) {
             var currentName = object.name;
             if(flags[currentName]){
@@ -60,7 +100,11 @@
                 newInput.oninput= function(event) {
                     addExtraInput(event.target);
                 }
+                newInput.onkeydown= function(event) {
+                    onKeyClick(event, event.target);
+                }
                 container.appendChild(newInput);
+                newInput.focus();
             }else{
                 var newInput = document.createElement('input');
                 newInput.type = 'password';
@@ -69,7 +113,11 @@
                 newInput.oninput= function(event) {
                     addExtraInput(event.target);
                 }
+                newInput.onkeydown= function(event) {
+                    onKeyClick(event, event.target);
+                }
                 container.appendChild(newInput);
+                newInput.focus();
             }
         }
     </script>

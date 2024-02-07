@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, make_response, redirect, url_for, session
-from sql import blake, setBalance, getBalanceFromAccount, getInfoAboutUser, getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getPersonalData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
+from sql import changeCurrentSequence, blake, setBalance, getBalanceFromAccount, getInfoAboutUser, getEmail, GetPasswordLink, addPasswordLink, deletePasswordLink, getPersonalData, getTransaction, changePassword, loginWithUsername, generateTenValues, loginWithPassword, sendTransactionToDatabase
 from clearInput import clearInput, clearInputPassword
 from sendEmail import sendEmail
 from flask_wtf.csrf import CSRFProtect
@@ -36,7 +36,7 @@ csrf = CSRFProtect(app)
 
 @app.errorhandler(Exception)
 def handle_error(error):
-    return redirect(url_for('accountChoose', message='Something went wrong try logging again'))
+    return redirect(url_for('accountChoose', message=error))
 
 @app.route("/", methods=['GET', 'POST'])
 def accountChoose():
@@ -61,7 +61,7 @@ def main():
     ran = random.uniform(0,0.5)
     time.sleep(2 + ran)
 
-    sequences = loginWithUsername(username)
+    sequences, currentSequence = loginWithUsername(username)
 
     if not sequences:
         missing = generateTenValues()
@@ -70,8 +70,7 @@ def main():
         return redirect(url_for('accountChoose', message='Issue with database'))
     
     else: 
-        i = secrets.randbelow(10)
-        list = sequences[i][0].split(",")
+        list = sequences[currentSequence[0]][0].split(",")
         intList = [int(x) for x in list]
         missing = intList
 
@@ -155,6 +154,7 @@ def bank():
             session['user'] = username
             session['ip'] = ip
             resp = make_response(renderBank())
+            changeCurrentSequence(username)
             return resp
     
     if request.method == 'GET':
@@ -243,7 +243,7 @@ def data():
     return renderBank("", data[0], data[1])
 
 def checkForCorrectPassword(givenPassword, username):
-    sequences = loginWithUsername(username)
+    sequences, currentSequence = loginWithUsername(username)
 
     i = secrets.randbelow(10)
     list = sequences[i][0].split(",")

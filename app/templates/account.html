@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static',filename='styles/account.css') }}">
 </head>
 <body>
-    <form method="post" action="{{ url_for('givePassword') }}">
+    <form method="post" action="{{ url_for('main') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <h1>Authentication id</h1>
         <br>

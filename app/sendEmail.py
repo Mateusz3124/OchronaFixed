@@ -4,13 +4,15 @@ def sendEmail(email, msg):
     smtp_server = "smtp.gmail.com"
     port = 587 
     #email from which you want to send mails
-    sender_email = ""
-    password = ""
+    sender_email = "testOchronaDanychPW@gmail.com"
+    password = "lvfwzupsxywsmgws"
 
     context = ssl.create_default_context()
     try:
         server = smtplib.SMTP(smtp_server,port)
+        server.ehlo()
         server.starttls(context=context)
+        server.ehlo()
         server.login(sender_email, password)
         msg['Subject'] = 'Notification from bank'
         msg['From'] = 'xxx'
