@@ -9,6 +9,14 @@ cd Bank
 sudo docker-compose build
 sudo docker-compose up
 ```
+you need to give email and password from which you want to send email for password recovery and to which you want to send notifications about issue on website:
+
+![image](https://github.com/Mateusz3124/OchronaFixed/assets/95550799/4d10e6a9-1e7d-439a-81ec-9a7d69675aaf)
+
+To get password from gmail for smtp you need to follow this tutorial:
+
+https://support.google.com/mail/answer/185833?hl=en
+
 tutorial on how to install docker-compose:
 
 https://docs.docker.com/compose/install/
