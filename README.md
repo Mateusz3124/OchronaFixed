@@ -1,4 +1,4 @@
-## Basic bank website
+# Basic bank website
 
 ### How to start
 
@@ -13,23 +13,25 @@ tutorial on how to install docker-compose:
 
 https://docs.docker.com/compose/install/
 
-### What i use
+### What i use:
+- Nginx with https protocol
+- MySql for database
+- To encrypt data: aes gcm
+- For passwords: argon2
+- For general hashes: blake2
+- For session: flask session
+- For CSRF: flask_wtf
 
-To encrypt data i use: aes gcm
-For passwords: 
-
-### accounts for login:
+### Accounts for login:
 
 first:
 
 - authentication id: 12345678
-
 - password: aA1!b4B1FG
 
 second:
 
 - authentication id: 87654321
-
 - password: aA1!b4B1FG
 
 ### How it looks
