@@ -13,6 +13,11 @@ tutorial on how to install docker-compose:
 
 https://docs.docker.com/compose/install/
 
+### What i use
+
+To encrypt data i use: aes gcm
+For passwords: 
+
 ### accounts for login:
 
 first:
@@ -45,5 +50,5 @@ After login you can see main page of bank. For example:
 
 ![image](https://github.com/Mateusz3124/OchronaFixed/assets/95550799/c4beb18f-5974-4456-b0d5-a16aa22e2c56)
 
-To encrypt data i use: sha
+
 
