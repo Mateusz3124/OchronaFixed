@@ -43,6 +43,10 @@ def accountChoose():
     messager = clearInput(request.args.get('message'))
     return render_template("account.html",message = messager)
 
+@app.route("/favicon.ico")
+def favicon():
+    return "", 200
+
 @app.route("/main", methods=['POST'])
 def main():
     username = clearInput(request.form.get("username"))
